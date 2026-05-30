@@ -322,37 +322,38 @@ async function getConfig() {
 }
 
 async function apiGet() {
-  try {
-    const cfg = await getConfig();
-    if (!cfg?.supabaseUrl || !cfg?.supabaseKey) return null;
-    const r = await fetch(
-      `${cfg.supabaseUrl}/rest/v1/${cfg.supabaseTable}?id=eq.1&select=data`,
-      { headers: { 'apikey': cfg.supabaseKey, 'Authorization': `Bearer ${cfg.supabaseKey}` } }
-    );
-    if (!r.ok) throw new Error(await r.text());
-    const rows = await r.json();
-    return Array.isArray(rows[0]?.data) && rows[0].data.length > 0 ? rows[0].data : null;
-  } catch (e) { console.error('apiGet failed:', e); return null; }
+  const cfg = await getConfig();
+  if (!cfg?.supabaseUrl || !cfg?.supabaseKey) { console.error('No Supabase config'); return null; }
+  const r = await fetch(
+    `${cfg.supabaseUrl}/rest/v1/${cfg.supabaseTable}?id=eq.1&select=data`,
+    { headers: { 'apikey': cfg.supabaseKey, 'Authorization': `Bearer ${cfg.supabaseKey}` } }
+  );
+  const text = await r.text();
+  console.log('apiGet status:', r.status, 'body:', text);
+  if (!r.ok) throw new Error(text);
+  const rows = JSON.parse(text);
+  return Array.isArray(rows[0]?.data) ? rows[0].data : null;
 }
 
 async function apiPost(notifications) {
-  try {
-    const cfg = await getConfig();
-    if (!cfg?.supabaseUrl || !cfg?.supabaseKey) return;
-    await fetch(
-      `${cfg.supabaseUrl}/rest/v1/${cfg.supabaseTable}?id=eq.1`,
-      {
-        method: 'PATCH',
-        headers: {
-          'apikey': cfg.supabaseKey,
-          'Authorization': `Bearer ${cfg.supabaseKey}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal',
-        },
-        body: JSON.stringify({ data: notifications }),
-      }
-    );
-  } catch (e) { console.error('apiPost failed:', e); }
+  const cfg = await getConfig();
+  if (!cfg?.supabaseUrl || !cfg?.supabaseKey) { console.error('No Supabase config'); return false; }
+  const r = await fetch(
+    `${cfg.supabaseUrl}/rest/v1/${cfg.supabaseTable}`,
+    {
+      method: 'POST',
+      headers: {
+        'apikey': cfg.supabaseKey,
+        'Authorization': `Bearer ${cfg.supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify({ id: 1, data: notifications }),
+    }
+  );
+  const text = await r.text();
+  console.log('apiPost status:', r.status, 'body:', text);
+  return r.ok;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -931,21 +932,30 @@ function NotificationForm({ notification, onSave, onBack }) {
    APP ROOT
 ───────────────────────────────────────────────────────────────────────────── */
 function App() {
-  const [notifications, setNotifications] = useState(SAMPLE);
+  const [notifications, setNotifications] = useState([]);
   const [screen,        setScreen]        = useState('list');
   const [editing,       setEditing]       = useState(null);
   const [loaded,        setLoaded]        = useState(false);
+  const [saveStatus,    setSaveStatus]    = useState(null); // 'saving' | 'ok' | 'error'
 
   useEffect(() => {
     apiGet().then(data => {
-      if (data) setNotifications(data);
+      console.log('Loaded from Supabase:', data);
+      setNotifications(Array.isArray(data) ? data : []);
+      setLoaded(true);
+    }).catch(e => {
+      console.error('Load failed:', e);
+      setNotifications([]);
       setLoaded(true);
     });
   }, []);
 
-  const handleUpdate = data => {
+  const handleUpdate = async data => {
     setNotifications(data);
-    apiPost(data);
+    setSaveStatus('saving');
+    const ok = await apiPost(data);
+    setSaveStatus(ok ? 'ok' : 'error');
+    setTimeout(() => setSaveStatus(null), 3000);
   };
 
   const handleNavigate = (s, n=null) => { setEditing(n); setScreen(s); };
@@ -958,10 +968,28 @@ function App() {
     setScreen('list');
   };
 
+  const statusBar = saveStatus && (
+    <div style={{
+      position:'fixed', bottom:20, right:24, zIndex:9999,
+      padding:'10px 18px', borderRadius:8, fontWeight:600, fontSize:13,
+      boxShadow:'0 4px 16px rgba(0,0,0,0.15)',
+      background: saveStatus==='ok' ? '#16a34a' : saveStatus==='error' ? '#dc2626' : '#1e293b',
+      color:'white',
+    }}>
+      {saveStatus==='saving' ? 'Saving…' : saveStatus==='ok' ? 'Saved ✓' : 'Save failed — check console'}
+    </div>
+  );
+
+  if (!loaded) return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',fontSize:15,color:'#64748b'}}>
+      Loading…
+    </div>
+  );
+
   if (screen === 'create' || screen === 'edit') {
-    return <NotificationForm notification={editing} onSave={handleSave} onBack={() => setScreen('list')} />;
+    return <>{statusBar}<NotificationForm notification={editing} onSave={handleSave} onBack={() => setScreen('list')} /></>;
   }
-  return <NotificationManagement notifications={notifications} onUpdate={handleUpdate} onNavigate={handleNavigate} />;
+  return <>{statusBar}<NotificationManagement notifications={notifications} onUpdate={handleUpdate} onNavigate={handleNavigate} /></>;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);

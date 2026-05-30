@@ -615,7 +615,7 @@ function ExpireModal({ onConfirm, onCancel }) {
 /* ─────────────────────────────────────────────────────────────────────────────
    NOTIFICATION MANAGEMENT SCREEN
 ───────────────────────────────────────────────────────────────────────────── */
-function NotificationManagement({ notifications, onUpdate, onNavigate }) {
+function NotificationManagement({ notifications, onUpdate, onNavigate, toast }) {
   const [search,     setSearch]     = useState('');
   const [typeFilter, setTypeFilter] = useState(['Carrier','Country','General']);
   const [sevFilter,  setSevFilter]  = useState(['Critical','Warning','Info']);
@@ -729,6 +729,8 @@ function NotificationManagement({ notifications, onUpdate, onNavigate }) {
       </div>
 
       <div className="page-content">
+
+        {toast}
 
         {/* Stats panels */}
         <div className="stats-row">
@@ -956,10 +958,11 @@ function NotificationForm({ notification, onSave, onBack }) {
       publishTime:  f.publishTime,
       expiryDate:   f.expiryDate,
       expiryTime:   f.expiryTime,
-      status:       isEdit ? notification.status : determineStatus(asDraft),
-      createdAt:    notification?.createdAt || new Date().toISOString(),
+      status:    determineStatus(asDraft),
+      createdAt: new Date().toISOString(),
     };
-    onSave(saved, isEdit);
+    const saveType = asDraft ? 'draft' : (determineStatus(false) === 'Scheduled' ? 'scheduled' : 'active');
+    onSave(saved, isEdit, saveType);
   };
 
   const TypeCard = ({ value }) => {
@@ -1207,24 +1210,43 @@ function NotificationForm({ notification, onSave, onBack }) {
 /* ─────────────────────────────────────────────────────────────────────────────
    APP ROOT
 ───────────────────────────────────────────────────────────────────────────── */
+const TOAST_MSGS = {
+  create: {
+    active:    { title: 'Notification Published Successfully!',  sub: 'The notification has been published successfully and will be visible on WSX.' },
+    scheduled: { title: 'Notification Scheduled Successfully!', sub: 'The notification has been created and scheduled successfully and will be visible on WSX on your chosen date and time.' },
+    draft:     { title: 'Notification Saved as Draft!',         sub: 'The notification has been saved as a draft successfully.' },
+  },
+  edit: {
+    active:    { title: 'Notification Updated Successfully!', sub: 'The notification has been updated successfully and will be visible on WSX.' },
+    scheduled: { title: 'Notification Updated Successfully!', sub: 'The notification has been updated and scheduled successfully and will be visible on WSX on your chosen date and time.' },
+    draft:     { title: 'Notification Updated Successfully!', sub: 'The notification has been saved as a draft successfully.' },
+  },
+};
+
 function App() {
   const [notifications, setNotifications] = useState([]);
   const [screen,        setScreen]        = useState('list');
   const [editing,       setEditing]       = useState(null);
   const [loaded,        setLoaded]        = useState(false);
-  const [saveStatus,    setSaveStatus]    = useState(null); // 'saving' | 'ok' | 'error'
+  const [saveStatus,    setSaveStatus]    = useState(null);
+  const [toast,         setToast]         = useState(null);
+  const toastTimer = useRef(null);
 
   useEffect(() => {
     apiGet().then(data => {
-      console.log('Loaded from Supabase:', data);
       setNotifications(Array.isArray(data) ? data : []);
       setLoaded(true);
-    }).catch(e => {
-      console.error('Load failed:', e);
+    }).catch(() => {
       setNotifications([]);
       setLoaded(true);
     });
   }, []);
+
+  const showToast = msg => {
+    setToast(msg);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 10000);
+  };
 
   const handleUpdate = async data => {
     setNotifications(data);
@@ -1236,11 +1258,12 @@ function App() {
 
   const handleNavigate = (s, n=null) => { setEditing(n); setScreen(s); };
 
-  const handleSave = (saved, isEdit) => {
+  const handleSave = (saved, isEdit, saveType) => {
     const next = isEdit
       ? notifications.map(n => n.id===saved.id ? saved : n)
       : [saved, ...notifications];
     handleUpdate(next);
+    showToast(TOAST_MSGS[isEdit ? 'edit' : 'create'][saveType] || TOAST_MSGS.create.active);
     setScreen('list');
   };
 
@@ -1256,6 +1279,23 @@ function App() {
     </div>
   );
 
+  const toastBanner = toast && (
+    <div style={{
+      background:'#f0fdf4', border:'1px solid #86efac', borderRadius:10,
+      padding:'14px 18px', marginBottom:20,
+      display:'flex', alignItems:'flex-start', gap:12,
+    }}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" style={{flexShrink:0,marginTop:1}}>
+        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <div style={{flex:1}}>
+        <div style={{fontWeight:700, fontSize:14, color:'#15803d'}}>{toast.title}</div>
+        <div style={{fontSize:13, color:'#166534', marginTop:3}}>{toast.sub}</div>
+      </div>
+      <button onClick={() => setToast(null)} style={{background:'none',border:'none',cursor:'pointer',color:'#16a34a',fontSize:18,lineHeight:1,padding:0}}>×</button>
+    </div>
+  );
+
   if (!loaded) return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',fontSize:15,color:'#64748b'}}>
       Loading…
@@ -1265,7 +1305,7 @@ function App() {
   if (screen === 'create' || screen === 'edit') {
     return <>{statusBar}<NotificationForm notification={editing} onSave={handleSave} onBack={() => setScreen('list')} /></>;
   }
-  return <>{statusBar}<NotificationManagement notifications={notifications} onUpdate={handleUpdate} onNavigate={handleNavigate} /></>;
+  return <>{statusBar}<NotificationManagement notifications={notifications} onUpdate={handleUpdate} onNavigate={handleNavigate} toast={toastBanner} /></>;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);

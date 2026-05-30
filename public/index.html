@@ -399,6 +399,15 @@ const fmtDate = s => {
   const d = new Date(s.length === 10 ? s + 'T00:00:00' : s);
   return d.toLocaleDateString('en-US', { month:'short', day:'2-digit', year:'numeric' });
 };
+const fmtDateTime = (date, time) => {
+  if (!date) return '';
+  const datePart = fmtDate(date);
+  if (!time) return datePart;
+  const [h, m] = time.split(':').map(Number);
+  const suffix = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${datePart}, ${h12}:${String(m).padStart(2,'0')} ${suffix}`;
+};
 
 let _config = null;
 
@@ -682,7 +691,7 @@ function NotificationManagement({ notifications, onUpdate, onNavigate, toast }) 
   // Export
   const handleExport = () => {
     const hdrs = ['Title','Type','Sub-Type','Severity','Scheduled Date','Expiry Date','Status','Last Modified By','Last Modified On'];
-    const toRow = n => [n.title, n.type, n.subType, n.severity, fmtDate(n.scheduledDate), fmtDate(n.expiryDate), n.status, n.createdBy, fmtDate(n.createdAt)];
+    const toRow = n => [n.title, n.type, n.subType, n.severity, fmtDateTime(n.scheduledDate, n.publishTime), fmtDateTime(n.expiryDate, n.expiryTime), n.status, n.createdBy, fmtDate(n.createdAt)];
     const wb = XLSX.utils.book_new();
     ['Active','Scheduled','Draft','Expired'].forEach(s => {
       const ws = XLSX.utils.aoa_to_sheet([hdrs, ...notifications.filter(n=>n.status===s).map(toRow)]);
@@ -813,8 +822,8 @@ function NotificationManagement({ notifications, onUpdate, onNavigate, toast }) 
                       <td><TypeBadge type={n.type} /></td>
                       <td>{n.subType}</td>
                       <td><SeverityBadge severity={n.severity} /></td>
-                      <td>{fmtDate(n.scheduledDate)}</td>
-                      <td>{fmtDate(n.expiryDate)}</td>
+                      <td>{fmtDateTime(n.scheduledDate, n.publishTime)}</td>
+                      <td>{fmtDateTime(n.expiryDate, n.expiryTime)}</td>
                       <td><StatusCell status={n.status} onToggle={() => handleToggle(n)} /></td>
                       <td>
                         <div style={{fontWeight:500}}>{n.createdBy}</div>

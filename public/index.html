@@ -278,6 +278,58 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .form-hint  { color: #94a3b8; font-size: 12px; margin-top: 4px; }
 .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
 
+/* ── Create/Edit form redesign ──────────────────────────────────────────── */
+.form-layout { display: grid; grid-template-columns: 1fr 360px; gap: 20px; align-items: start; }
+.form-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; }
+.form-panel-title { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 3px; }
+.form-panel-sub   { font-size: 13px; color: #64748b; margin-bottom: 22px; }
+.form-field-title { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 10px; }
+
+/* Type / Severity radio cards */
+.radio-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 6px; }
+.radio-card {
+  border: 2px solid #e2e8f0; border-radius: 10px; padding: 14px 12px 12px;
+  cursor: pointer; position: relative; transition: border-color 0.15s, background 0.15s;
+  background: white;
+}
+.radio-card.selected { border-color: #3b82f6; background: #f0f7ff; }
+.radio-card-radio { position: absolute; top: 10px; right: 10px; accent-color: #3b82f6; }
+.radio-card-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+.radio-card-label { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 3px; }
+.radio-card-desc  { font-size: 11px; color: #64748b; line-height: 1.45; }
+.sev-card { flex-direction: row; gap: 10px; align-items: flex-start; }
+.sev-card .radio-card-icon { margin-bottom: 0; flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px; }
+
+/* Toggle */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; }
+.toggle-info .toggle-label { font-size: 14px; font-weight: 600; color: #0f172a; }
+.toggle-info .toggle-sub   { font-size: 12px; color: #64748b; margin-top: 2px; }
+.ts { position:relative; width:44px; height:24px; flex-shrink:0; }
+.ts input { opacity:0; width:0; height:0; }
+.ts-track { position:absolute; inset:0; background:#cbd5e1; border-radius:24px; cursor:pointer; transition:.2s; }
+.ts-track:before { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; background:white; border-radius:50%; transition:.2s; }
+.ts input:checked ~ .ts-track { background:#3b82f6; }
+.ts input:checked ~ .ts-track:before { transform:translateX(20px); }
+
+/* Datetime row */
+.dt-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+/* Preview panel */
+.preview-panel { background:white; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:sticky; top:20px; }
+.preview-panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.preview-panel-title  { font-size:15px; font-weight:700; color:#0f172a; }
+.preview-gen-btn { display:flex; align-items:center; gap:5px; background:none; border:none; color:#3b82f6; font-size:13px; font-weight:600; cursor:pointer; }
+.preview-gen-btn:hover { text-decoration:underline; }
+.preview-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; }
+.preview-icon { width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
+.preview-ntitle { font-size:14px; font-weight:600; color:#0f172a; margin-bottom:5px; }
+.preview-nmsg   { font-size:12px; color:#64748b; margin-bottom:12px; line-height:1.5; }
+.preview-footer { display:flex; align-items:center; justify-content:space-between; }
+.sev-pill { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+
+/* Error banner */
+.err-banner { background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:11px 16px; display:flex; align-items:center; gap:8px; margin-bottom:16px; font-size:13px; font-weight:600; color:#dc2626; }
+
 /* ── Empty state ────────────────────────────────────────────────────────── */
 .empty-state { text-align: center; padding: 52px; color: #94a3b8; }
 .empty-state-icon { font-size: 40px; margin-bottom: 12px; }
@@ -320,9 +372,22 @@ const SAMPLE = [
 ];
 
 const COUNTRIES = [
-  'Australia','Belgium','Brazil','Canada','China','France','Germany','India',
-  'Italy','Japan','Mexico','Netherlands','New Zealand','Singapore','Spain',
-  'Sweden','United Arab Emirates','United Kingdom','United States',
+  'Afghanistan','Albania','Algeria','Argentina','Armenia','Australia','Austria',
+  'Azerbaijan','Bahrain','Bangladesh','Belarus','Belgium','Bolivia','Bosnia and Herzegovina',
+  'Brazil','Bulgaria','Cambodia','Cameroon','Canada','Chile','China','Colombia',
+  'Costa Rica','Croatia','Cyprus','Czech Republic','Denmark','Dominican Republic',
+  'Ecuador','Egypt','El Salvador','Estonia','Ethiopia','Finland','France','Georgia',
+  'Germany','Ghana','Greece','Guatemala','Honduras','Hong Kong','Hungary','Iceland',
+  'India','Indonesia','Iran','Iraq','Ireland','Israel','Italy','Jamaica','Japan',
+  'Jordan','Kazakhstan','Kenya','Kuwait','Latvia','Lebanon','Lithuania','Luxembourg',
+  'Macau','Malaysia','Malta','Mexico','Morocco','Mozambique','Myanmar','Nepal',
+  'Netherlands','New Zealand','Nicaragua','Nigeria','Norway','Oman','Pakistan',
+  'Panama','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Romania',
+  'Russia','Saudi Arabia','Senegal','Serbia','Singapore','Slovakia','Slovenia',
+  'South Africa','South Korea','Spain','Sri Lanka','Sweden','Switzerland','Taiwan',
+  'Tanzania','Thailand','Tunisia','Turkey','Uganda','Ukraine','United Arab Emirates',
+  'United Kingdom','United States','Uruguay','Uzbekistan','Venezuela','Vietnam',
+  'Yemen','Zimbabwe',
 ];
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -800,157 +865,338 @@ function NotificationManagement({ notifications, onUpdate, onNavigate }) {
 /* ─────────────────────────────────────────────────────────────────────────────
    CREATE / EDIT FORM
 ───────────────────────────────────────────────────────────────────────────── */
+const TYPE_ICONS = {
+  Carrier: { color:'#f59e0b', bg:'#fff7ed', d:'M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.657 1.343 3 3 3s3-1.343 3-3h6c0 1.657 1.343 3 3 3s3-1.343 3-3h2v-5l-3-4zM6 18.5c-.828 0-1.5-.672-1.5-1.5s.672-1.5 1.5-1.5 1.5.672 1.5 1.5-.672 1.5-1.5 1.5zm13.5-9l1.961 2.5H17V9.5h2.5zm-1 9c-.828 0-1.5-.672-1.5-1.5s.672-1.5 1.5-1.5 1.5.672 1.5 1.5-.672 1.5-1.5 1.5z' },
+  Country: { color:'#8b5cf6', bg:'#f5f3ff', d:'M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1 17.93c-3.94-.49-7-3.858-7-7.93 0-.62.079-1.222.21-1.8L9 15v1a2 2 0 002 2v1.93zm6.9-2.54A2 2 0 0016 13h-1v-3a1 1 0 00-1-1H8v-2h2a1 1 0 000-2V3.07A8.003 8.003 0 0120 11c0 2.395-1.053 4.543-2.1 5.39z' },
+  General: { color:'#10b981', bg:'#ecfdf5', d:'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+};
+const SEV_ICONS = {
+  Critical: { color:'#dc2626', bg:'#fef2f2', d:'M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z' },
+  Warning:  { color:'#f59e0b', bg:'#fffbeb', d:'M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z' },
+  Info:     { color:'#3b82f6', bg:'#eff6ff', d:'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+};
+
 function NotificationForm({ notification, onSave, onBack }) {
   const isEdit = !!notification;
+  const today  = new Date().toISOString().slice(0, 10);
+
   const [f, setF] = useState({
-    title:         notification?.title         || '',
-    type:          notification?.type          || 'General',
-    subType:       notification?.subType       || 'General',
-    severity:      notification?.severity      || 'Info',
-    scheduledDate: notification?.scheduledDate || '',
-    expiryDate:    notification?.expiryDate    || '',
-    message:       notification?.message       || '',
-    createdBy:     notification?.createdBy     || '',
+    title:        notification?.title        || '',
+    type:         notification?.type         || '',
+    subType:      notification?.subType === 'General' ? '' : (notification?.subType || ''),
+    severity:     notification?.severity     || '',
+    message:      notification?.message      || '',
+    link:         notification?.link         || '',
+    createdBy:    notification?.createdBy    || '',
+    scheduledFor: notification?.status === 'Scheduled',
+    publishDate:  notification?.scheduledDate || '',
+    publishTime:  notification?.publishTime  || '',
+    expiryDate:   notification?.expiryDate   || '',
+    expiryTime:   notification?.expiryTime   || '',
   });
-  const [errors, setErrors] = useState({});
+  const [errors,  setErrors]  = useState({});
+  const [preview, setPreview] = useState(null);
 
   const set = (field, val) => {
     setF(prev => {
       const next = { ...prev, [field]: val };
-      if (field === 'type') next.subType = val === 'General' ? 'General' : '';
+      if (field === 'type') next.subType = '';
       return next;
     });
     setErrors(e => ({ ...e, [field]: undefined }));
   };
 
+  const errCount = Object.values(errors).filter(Boolean).length;
+
+  const isMandatoryFilled = f.title.trim() && f.type && f.severity && f.message.trim() && f.createdBy.trim() &&
+    (f.type === 'General' || f.subType.trim());
+
   const validate = () => {
     const e = {};
-    if (!f.title.trim())     e.title    = 'Title is required';
-    if (!f.createdBy.trim()) e.createdBy = 'Created by is required';
-    if (f.type !== 'General' && !f.subType.trim()) e.subType = 'Sub-type is required';
-    if (f.scheduledDate) {
-      const today = new Date(); today.setHours(0,0,0,0);
-      if (new Date(f.scheduledDate + 'T00:00:00') < today) e.scheduledDate = 'Scheduled date cannot be in the past';
+    if (!f.title.trim())                                 e.title     = 'Notification title is required';
+    else if (f.title.length > 60)                        e.title     = 'Title cannot exceed 60 characters';
+    if (!f.type)                                         e.type      = 'Please select a notification type';
+    if (f.type === 'Carrier' && !f.subType.trim())       e.subType   = 'Carrier name is required';
+    if (f.type === 'Country' && !f.subType)              e.subType   = 'Please select a country';
+    if (!f.severity)                                     e.severity  = 'Please select a severity level';
+    if (!f.message.trim())                               e.message   = 'Notification message is required';
+    else if (f.message.length > 500)                     e.message   = 'Message cannot exceed 500 characters';
+    if (!f.createdBy.trim())                             e.createdBy = 'Your name is required';
+    if (f.link && !/^https?:\/\/.+\..+/.test(f.link))   e.link      = 'Please enter a valid URL (must start with https://)';
+    if (f.scheduledFor) {
+      if (f.publishDate && !f.publishTime)  e.publishTime = 'Time is required when date is set';
+      if (f.publishTime && !f.publishDate)  e.publishDate = 'Date is required when time is set';
+      if (f.publishDate && f.publishDate < today) e.publishDate = 'Publish date cannot be in the past';
     }
+    if (f.expiryDate && !f.expiryTime) e.expiryTime = 'Time is required when date is set';
+    if (f.expiryTime && !f.expiryDate) e.expiryDate = 'Date is required when time is set';
+    if (f.expiryDate && f.expiryDate < today) e.expiryDate = 'Expiry date cannot be in the past';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const determineStatus = asDraft => {
     if (asDraft) return 'Draft';
-    if (!f.scheduledDate) return 'Active';
-    return new Date(f.scheduledDate + 'T00:00:00') > new Date() ? 'Scheduled' : 'Active';
+    if (f.scheduledFor && f.publishDate && f.publishTime) return 'Scheduled';
+    return 'Active';
   };
 
   const handleSubmit = asDraft => {
-    if (!validate()) return;
+    if (!asDraft && !validate()) return;
     const saved = {
-      id:        notification?.id || genId(),
-      ...f,
-      status:    isEdit ? notification.status : determineStatus(asDraft),
-      createdAt: notification?.createdAt || new Date().toISOString(),
+      id:           notification?.id || genId(),
+      title:        f.title,
+      type:         f.type || 'General',
+      subType:      f.type === 'General' ? 'General' : f.subType,
+      severity:     f.severity || 'Info',
+      message:      f.message,
+      link:         f.link,
+      createdBy:    f.createdBy,
+      scheduledDate: f.scheduledFor && f.publishDate ? f.publishDate : '',
+      publishTime:  f.publishTime,
+      expiryDate:   f.expiryDate,
+      expiryTime:   f.expiryTime,
+      status:       isEdit ? notification.status : determineStatus(asDraft),
+      createdAt:    notification?.createdAt || new Date().toISOString(),
     };
     onSave(saved, isEdit);
   };
 
+  const TypeCard = ({ value }) => {
+    const ti = TYPE_ICONS[value];
+    const descs = { Carrier:'Carrier-specific disruptions & service updates', Country:'Country-level customs & regional alerts', General:'Platform-wide notices & general advisories' };
+    return (
+      <div className={`radio-card${f.type===value?' selected':''}`} onClick={()=>set('type',value)}>
+        <input type="radio" className="radio-card-radio" readOnly checked={f.type===value} />
+        <div className="radio-card-icon" style={{background:ti.bg}}>
+          <Icon d={ti.d} size={18} color={ti.color} />
+        </div>
+        <div className="radio-card-label">{value}</div>
+        <div className="radio-card-desc">{descs[value]}</div>
+      </div>
+    );
+  };
+
+  const SevCard = ({ value }) => {
+    const si = SEV_ICONS[value];
+    const descs = { Critical:'Immediate impact', Warning:'Possible disruption', Info:'General awareness' };
+    return (
+      <div className={`radio-card sev-card${f.severity===value?' selected':''}`} onClick={()=>set('severity',value)}>
+        <input type="radio" className="radio-card-radio" readOnly checked={f.severity===value} />
+        <div className="radio-card-icon" style={{background:si.bg}}>
+          <Icon d={si.d} size={16} color={si.color} />
+        </div>
+        <div>
+          <div className="radio-card-label">{value}</div>
+          <div className="radio-card-desc">{descs[value]}</div>
+        </div>
+      </div>
+    );
+  };
+
+  const previewData = preview || {};
+  const pvType = previewData.type;
+  const pvTI   = TYPE_ICONS[pvType] || { color:'#94a3b8', bg:'#f1f5f9', d:'M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.657 1.343 3 3 3s3-1.343 3-3h6c0 1.657 1.343 3 3 3s3-1.343 3-3h2v-5l-3-4z' };
+  const pvSI   = SEV_ICONS[previewData.severity];
+
   return (
     <div>
       <div className="page-header">
-        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-          <button className="btn btn-ghost" style={{padding:'7px 14px', fontSize:12}} onClick={onBack}>← Back</button>
-          <div>
-            <div className="page-title">{isEdit ? 'Edit Notification' : 'Create New Notification'}</div>
-            <div className="page-subtitle">
-              {isEdit ? 'Update the details below and save your changes.' : 'Fill in the details to create a new notification.'}
-            </div>
-          </div>
+        <div>
+          <div className="page-title">{isEdit ? 'Edit Notification' : 'Create New Notification'}</div>
+          <div className="page-subtitle">Create a Carrier, Country, or General Notification</div>
+        </div>
+        <div className="page-actions">
+          <button className="btn btn-ghost" onClick={onBack}>CANCEL</button>
+          <button className="btn btn-ghost" style={{borderColor:'#e2e8f0'}} onClick={()=>handleSubmit(true)}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2zM17 21v-8H7v8M7 3v5h8"/></svg>
+            SAVE AS DRAFT
+          </button>
+          <button className="btn btn-primary" disabled={!isMandatoryFilled} onClick={()=>handleSubmit(false)}>
+            {isEdit ? 'UPDATE NOTIFICATION' : 'SUBMIT NOTIFICATION'}
+          </button>
         </div>
       </div>
 
       <div className="page-content">
-        <div className="form-card">
-
-          <div className="form-section-title">Notification Details</div>
-
-          <div className="form-field">
-            <label className="form-label">Notification Title <span className="required">*</span></label>
-            <input className={`form-input${errors.title?' err':''}`} value={f.title} onChange={e=>set('title',e.target.value)} placeholder="Enter notification title" />
-            {errors.title && <div className="form-error">{errors.title}</div>}
+        {errCount > 0 && (
+          <div className="err-banner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {errCount} error{errCount!==1?'s':''} need{errCount===1?'s':''} to be fixed before publishing.
           </div>
+        )}
 
-          <div className="form-row">
-            <div className="form-field">
-              <label className="form-label">Type <span className="required">*</span></label>
-              <select className="form-select" value={f.type} onChange={e=>set('type',e.target.value)}>
-                <option>Carrier</option>
-                <option>Country</option>
-                <option>General</option>
-              </select>
-            </div>
-            <div className="form-field">
-              <label className="form-label">
-                Sub-Type {f.type !== 'General' ? <span className="required">*</span> : <span className="optional">(auto)</span>}
-              </label>
-              {f.type === 'General' ? (
-                <input className="form-input" value="General" disabled style={{background:'#f8fafc', color:'#94a3b8'}} />
-              ) : f.type === 'Country' ? (
-                <select className={`form-select${errors.subType?' err':''}`} value={f.subType} onChange={e=>set('subType',e.target.value)}>
-                  <option value="">Select a country…</option>
-                  {COUNTRIES.map(c => <option key={c}>{c}</option>)}
-                </select>
-              ) : (
-                <input className={`form-input${errors.subType?' err':''}`} value={f.subType} onChange={e=>set('subType',e.target.value)} placeholder="e.g. DHL, UPS, FedEx" />
+        <div className="form-layout">
+          {/* ── Left column ── */}
+          <div style={{display:'flex',flexDirection:'column',gap:20}}>
+
+            {/* Notification Details */}
+            <div className="form-panel">
+              <div className="form-panel-title">Notification Details</div>
+              <div className="form-panel-sub">Create critical shipping notifications</div>
+
+              {/* Title */}
+              <div className="form-field">
+                <label className="form-label">Notification Title <span className="required">*</span></label>
+                <input className={`form-input${errors.title?' err':''}`} maxLength={60} value={f.title} onChange={e=>set('title',e.target.value)} placeholder="Enter title here" />
+                <div className="form-hint">Maximum 60 characters</div>
+                {errors.title && <div className="form-error">{errors.title}</div>}
+              </div>
+
+              {/* Type */}
+              <div className="form-field">
+                <div className="form-field-title">Select Notification Type <span className="required">*</span></div>
+                <div className="radio-cards">
+                  <TypeCard value="Carrier" /><TypeCard value="Country" /><TypeCard value="General" />
+                </div>
+                {errors.type && <div className="form-error">{errors.type}</div>}
+              </div>
+
+              {/* Conditional sub-field */}
+              {f.type === 'Carrier' && (
+                <div className="form-field">
+                  <label className="form-label">Enter Carrier Name <span className="required">*</span></label>
+                  <input className={`form-input${errors.subType?' err':''}`} maxLength={60} value={f.subType} onChange={e=>set('subType',e.target.value)} placeholder="e.g. DHL, UPS, FedEx" />
+                  <div className="form-hint">Maximum 60 characters</div>
+                  {errors.subType && <div className="form-error">{errors.subType}</div>}
+                </div>
               )}
-              {errors.subType && <div className="form-error">{errors.subType}</div>}
+              {f.type === 'Country' && (
+                <div className="form-field">
+                  <label className="form-label">Select Country <span className="required">*</span></label>
+                  <select className={`form-select${errors.subType?' err':''}`} value={f.subType} onChange={e=>set('subType',e.target.value)}>
+                    <option value="">Select a country…</option>
+                    {COUNTRIES.map(c=><option key={c}>{c}</option>)}
+                  </select>
+                  {errors.subType && <div className="form-error">{errors.subType}</div>}
+                </div>
+              )}
+
+              {/* Severity */}
+              <div className="form-field">
+                <div className="form-field-title">Select Severity Level <span className="required">*</span></div>
+                <div className="radio-cards">
+                  <SevCard value="Critical" /><SevCard value="Warning" /><SevCard value="Info" />
+                </div>
+                {errors.severity && <div className="form-error">{errors.severity}</div>}
+              </div>
+
+              {/* Message */}
+              <div className="form-field">
+                <label className="form-label">Notification Message <span className="required">*</span></label>
+                <textarea className={`form-textarea${errors.message?' err':''}`} rows={5} maxLength={500} value={f.message} onChange={e=>set('message',e.target.value)} placeholder="Placeholder text description goes here" />
+                <div className="form-hint">Maximum 500 characters</div>
+                {errors.message && <div className="form-error">{errors.message}</div>}
+              </div>
+
+              {/* Link */}
+              <div className="form-field">
+                <label className="form-label">Additional Information Link <span className="optional">(optional)</span></label>
+                <input className={`form-input${errors.link?' err':''}`} value={f.link} onChange={e=>set('link',e.target.value)} placeholder="https:// — shown as a clickable link in the notification" />
+                {errors.link && <div className="form-error">{errors.link}</div>}
+              </div>
+
+              {/* Your Name */}
+              <div className="form-field" style={{marginBottom:0}}>
+                <label className="form-label">Your Name <span className="required">*</span></label>
+                <input className={`form-input${errors.createdBy?' err':''}`} value={f.createdBy} onChange={e=>set('createdBy',e.target.value)} placeholder="Enter your name" />
+                {errors.createdBy && <div className="form-error">{errors.createdBy}</div>}
+              </div>
+            </div>
+
+            {/* Delivery Options */}
+            <div className="form-panel">
+              <div className="form-panel-title">Delivery Options</div>
+              <div className="form-panel-sub">Choose when to send this notification</div>
+
+              <div className="toggle-row">
+                <div className="toggle-info">
+                  <div className="toggle-label">Schedule For Later</div>
+                  <div className="toggle-sub">Off = publishes immediately on create</div>
+                </div>
+                <label className="ts">
+                  <input type="checkbox" checked={f.scheduledFor} onChange={e=>set('scheduledFor',e.target.checked)} />
+                  <span className="ts-track" />
+                </label>
+              </div>
+
+              {f.scheduledFor && (
+                <div style={{marginBottom:20}}>
+                  <div className="form-field-title">Publish Date and Time</div>
+                  <div className="dt-row">
+                    <div>
+                      <label className="form-label" style={{fontWeight:400,color:'#64748b',fontSize:12}}>Select Date</label>
+                      <input type="date" className={`form-input${errors.publishDate?' err':''}`} min={today} value={f.publishDate} onChange={e=>set('publishDate',e.target.value)} />
+                      {errors.publishDate && <div className="form-error">{errors.publishDate}</div>}
+                    </div>
+                    <div>
+                      <label className="form-label" style={{fontWeight:400,color:'#64748b',fontSize:12}}>Select Time</label>
+                      <input type="time" className={`form-input${errors.publishTime?' err':''}`} value={f.publishTime} onChange={e=>set('publishTime',e.target.value)} />
+                      {errors.publishTime && <div className="form-error">{errors.publishTime}</div>}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <div className="form-field-title">Expiry Date and Time</div>
+                <div className="dt-row">
+                  <div>
+                    <label className="form-label" style={{fontWeight:400,color:'#64748b',fontSize:12}}>Select Date</label>
+                    <input type="date" className={`form-input${errors.expiryDate?' err':''}`} min={today} value={f.expiryDate} onChange={e=>set('expiryDate',e.target.value)} />
+                    {errors.expiryDate && <div className="form-error">{errors.expiryDate}</div>}
+                  </div>
+                  <div>
+                    <label className="form-label" style={{fontWeight:400,color:'#64748b',fontSize:12}}>Select Time</label>
+                    <input type="time" className={`form-input${errors.expiryTime?' err':''}`} value={f.expiryTime} onChange={e=>set('expiryTime',e.target.value)} />
+                    {errors.expiryTime && <div className="form-error">{errors.expiryTime}</div>}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="form-field">
-            <label className="form-label">Severity <span className="required">*</span></label>
-            <select className="form-select" value={f.severity} onChange={e=>set('severity',e.target.value)}>
-              <option>Critical</option>
-              <option>Warning</option>
-              <option>Info</option>
-            </select>
-          </div>
-
-          <div className="form-section-title" style={{marginTop:8}}>Scheduling</div>
-
-          <div className="form-row">
-            <div className="form-field">
-              <label className="form-label">Scheduled Date <span className="optional">(optional)</span></label>
-              <input type="date" className={`form-input${errors.scheduledDate?' err':''}`} min={new Date().toISOString().slice(0,10)} value={f.scheduledDate} onChange={e=>set('scheduledDate',e.target.value)} />
-              {errors.scheduledDate && <div className="form-error">{errors.scheduledDate}</div>}
-              <div className="form-hint">Leave blank to publish immediately. Future date sets status to Scheduled.</div>
+          {/* ── Right column — Preview ── */}
+          <div className="preview-panel">
+            <div className="preview-panel-header">
+              <div className="preview-panel-title">Notification Preview</div>
+              <button className="preview-gen-btn" onClick={()=>setPreview({...f})}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Generate Preview
+              </button>
             </div>
-            <div className="form-field">
-              <label className="form-label">Expiry Date <span className="optional">(optional)</span></label>
-              <input type="date" className="form-input" value={f.expiryDate} onChange={e=>set('expiryDate',e.target.value)} />
-              <div className="form-hint">Notification will auto-expire on this date.</div>
+
+            <div className="preview-box">
+              <div className="preview-icon" style={{background: preview ? pvTI.bg : '#f1f5f9'}}>
+                <Icon d={pvTI.d} size={18} color={preview ? pvTI.color : '#94a3b8'} />
+              </div>
+              <div className="preview-ntitle" style={!preview?{color:'#94a3b8',fontWeight:400}:{}}>
+                {preview
+                  ? <>{previewData.title || 'Notification title will appear here'}{pvType!=='General'&&previewData.subType&&<span style={{color:'#64748b',fontWeight:400}}> [{previewData.subType}]</span>}</>
+                  : 'Notification title will appear here'
+                }
+              </div>
+              <div className="preview-nmsg">
+                {preview && previewData.message
+                  ? previewData.message.length > 120 ? previewData.message.slice(0,120)+'…' : previewData.message
+                  : 'Message preview will appear here…'
+                }
+                {preview && previewData.link && (
+                  <span style={{marginLeft:6}}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" style={{verticalAlign:'middle'}}><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+                  </span>
+                )}
+              </div>
+              <div className="preview-footer">
+                <span className="sev-pill" style={{
+                  background: preview && pvSI ? pvSI.bg : '#f1f5f9',
+                  color:      preview && pvSI ? pvSI.color : '#94a3b8',
+                }}>
+                  {preview && previewData.severity ? previewData.severity : 'Severity'}
+                </span>
+                <span style={{fontSize:12,color:'#94a3b8'}}>Publication time</span>
+              </div>
             </div>
-          </div>
-
-          <div className="form-section-title" style={{marginTop:8}}>Message</div>
-
-          <div className="form-field">
-            <label className="form-label">Notification Message <span className="optional">(optional)</span></label>
-            <textarea className="form-textarea" rows={4} value={f.message} onChange={e=>set('message',e.target.value)} placeholder="Enter the notification message shown to users…" />
-          </div>
-
-          <div className="form-section-title" style={{marginTop:8}}>Created By</div>
-
-          <div className="form-field">
-            <label className="form-label">Your Name <span className="required">*</span></label>
-            <input className={`form-input${errors.createdBy?' err':''}`} value={f.createdBy} onChange={e=>set('createdBy',e.target.value)} placeholder="Enter your name" />
-            {errors.createdBy && <div className="form-error">{errors.createdBy}</div>}
-          </div>
-
-          <div className="form-actions">
-            <button className="btn btn-ghost" onClick={onBack}>Cancel</button>
-            {!isEdit && <button className="btn btn-outline" onClick={() => handleSubmit(true)}>Save as Draft</button>}
-            <button className="btn btn-primary" onClick={() => handleSubmit(false)}>
-              {isEdit ? 'Update Notification' : 'Create Notification'}
-            </button>
           </div>
         </div>
       </div>

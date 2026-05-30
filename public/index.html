@@ -778,16 +778,16 @@ function NotificationForm({ notification, onSave, onBack }) {
 
   const validate = () => {
     const e = {};
-    if (!f.title.trim())     e.title         = 'Title is required';
-    if (!f.createdBy.trim()) e.createdBy      = 'Created by is required';
-    if (!f.scheduledDate)    e.scheduledDate  = 'Scheduled date is required';
+    if (!f.title.trim())     e.title    = 'Title is required';
+    if (!f.createdBy.trim()) e.createdBy = 'Created by is required';
     if (f.type !== 'General' && !f.subType.trim()) e.subType = 'Sub-type is required';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const determineStatus = asDraft => {
-    if (asDraft || !f.scheduledDate) return 'Draft';
+    if (asDraft) return 'Draft';
+    if (!f.scheduledDate) return 'Active';
     return new Date(f.scheduledDate + 'T00:00:00') > new Date() ? 'Scheduled' : 'Active';
   };
 
@@ -867,10 +867,9 @@ function NotificationForm({ notification, onSave, onBack }) {
 
           <div className="form-row">
             <div className="form-field">
-              <label className="form-label">Scheduled Date <span className="required">*</span></label>
-              <input type="date" className={`form-input${errors.scheduledDate?' err':''}`} value={f.scheduledDate} onChange={e=>set('scheduledDate',e.target.value)} />
-              {errors.scheduledDate && <div className="form-error">{errors.scheduledDate}</div>}
-              <div className="form-hint">If date is in the future, status will be set to Scheduled.</div>
+              <label className="form-label">Scheduled Date <span className="optional">(optional)</span></label>
+              <input type="date" className="form-input" value={f.scheduledDate} onChange={e=>set('scheduledDate',e.target.value)} />
+              <div className="form-hint">Leave blank to publish immediately. If date is in the future, status will be set to Scheduled.</div>
             </div>
             <div className="form-field">
               <label className="form-label">Expiry Date <span className="optional">(optional)</span></label>

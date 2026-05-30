@@ -311,19 +311,27 @@ const fmtDate = s => {
   return d.toLocaleDateString('en-US', { month:'short', day:'2-digit', year:'numeric' });
 };
 
-function getSupabaseClient() {
-  const url = window.__SB_URL__;
-  const key = window.__SB_KEY__;
-  if (!url || !key) return null;
-  return supabase.createClient(url, key);
+let _sbClient = null;
+let _sbTable  = 'notifications_data';
+
+async function getSupabaseClient() {
+  if (_sbClient) return _sbClient;
+  try {
+    const r    = await fetch('/api/config');
+    const cfg  = await r.json();
+    if (cfg.supabaseUrl && cfg.supabaseKey) {
+      _sbClient = supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
+      _sbTable  = cfg.supabaseTable || 'notifications_data';
+    }
+  } catch (e) { console.error('Config fetch failed:', e); }
+  return _sbClient;
 }
 
 async function apiGet() {
   try {
-    const sb = getSupabaseClient();
+    const sb = await getSupabaseClient();
     if (!sb) return null;
-    const table = window.__SB_TABLE__ || 'notifications_data';
-    const { data, error } = await sb.from(table).select('data').eq('id', 1).single();
+    const { data, error } = await sb.from(_sbTable).select('data').eq('id', 1).single();
     if (error) { console.error('Supabase read error:', error); return null; }
     return Array.isArray(data?.data) && data.data.length > 0 ? data.data : null;
   } catch (e) { console.error('apiGet failed:', e); return null; }
@@ -331,10 +339,9 @@ async function apiGet() {
 
 async function apiPost(notifications) {
   try {
-    const sb = getSupabaseClient();
+    const sb = await getSupabaseClient();
     if (!sb) return;
-    const table = window.__SB_TABLE__ || 'notifications_data';
-    const { error } = await sb.from(table).update({ data: notifications }).eq('id', 1);
+    const { error } = await sb.from(_sbTable).update({ data: notifications }).eq('id', 1);
     if (error) console.error('Supabase write error:', error);
   } catch (e) { console.error('apiPost failed:', e); }
 }

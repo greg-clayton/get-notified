@@ -399,14 +399,14 @@ const fmtDate = s => {
   const d = new Date(s.length === 10 ? s + 'T00:00:00' : s);
   return d.toLocaleDateString('en-US', { month:'short', day:'2-digit', year:'numeric' });
 };
+const fmtTime = t => {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`;
+};
 const fmtDateTime = (date, time) => {
   if (!date) return '';
-  const datePart = fmtDate(date);
-  if (!time) return datePart;
-  const [h, m] = time.split(':').map(Number);
-  const suffix = h >= 12 ? 'PM' : 'AM';
-  const h12 = h % 12 || 12;
-  return `${datePart}, ${h12}:${String(m).padStart(2,'0')} ${suffix}`;
+  return time ? `${fmtDate(date)} ${fmtTime(time)}` : fmtDate(date);
 };
 
 let _config = null;
@@ -822,8 +822,14 @@ function NotificationManagement({ notifications, onUpdate, onNavigate, toast }) 
                       <td><TypeBadge type={n.type} /></td>
                       <td>{n.subType}</td>
                       <td><SeverityBadge severity={n.severity} /></td>
-                      <td>{fmtDateTime(n.scheduledDate, n.publishTime)}</td>
-                      <td>{fmtDateTime(n.expiryDate, n.expiryTime)}</td>
+                      <td>
+                        {fmtDate(n.scheduledDate)}
+                        {n.publishTime && <div style={{fontSize:12,color:'#64748b',marginTop:2}}>{fmtTime(n.publishTime)}</div>}
+                      </td>
+                      <td>
+                        {fmtDate(n.expiryDate)}
+                        {n.expiryTime && <div style={{fontSize:12,color:'#64748b',marginTop:2}}>{fmtTime(n.expiryTime)}</div>}
+                      </td>
                       <td><StatusCell status={n.status} onToggle={() => handleToggle(n)} /></td>
                       <td>
                         <div style={{fontWeight:500}}>{n.createdBy}</div>

@@ -527,16 +527,20 @@ function ExpireModal({ onConfirm, onCancel }) {
   return (
     <div className="modal-overlay" onClick={e => e.target===e.currentTarget && onCancel()}>
       <div className="modal-box">
-        <div className="modal-kicker" style={{color:'#f59e0b'}}>EXPIRE NOTIFICATION?</div>
-        <div className="modal-title">Expire Notification</div>
-        <div className="modal-sub">Are you sure you want to expire this Notification?</div>
-        <div className="modal-body">
-          This notification will expire and will no longer be visible to users.
-          You can reactivate it at any time by editing it.
+        <div className="modal-header">
+          <span className="modal-header-title">Expire Notification?</span>
+          <button className="modal-close" onClick={onCancel}>×</button>
         </div>
-        <div className="modal-actions">
+        <div className="modal-content">
+          <div className="modal-question">Are you sure you want to expire this Notification?</div>
+          <div className="modal-body">
+            This notification will expire and will no longer be visible to users.
+            You can reactivate it at any time by editing it.
+          </div>
+        </div>
+        <div className="modal-footer">
           <button className="btn btn-ghost" onClick={onCancel}>GO BACK</button>
-          <button className="btn btn-amber" onClick={onConfirm}>YES, EXPIRE</button>
+          <button className="btn btn-primary" onClick={onConfirm}>YES, EXPIRE</button>
         </div>
       </div>
     </div>

@@ -5,15 +5,15 @@ const https   = require("https");
 const app  = express();
 const PORT = process.env.PORT || 3001;
 
-const SUPABASE_URL   = process.env.SUPABASE_URL;
-const SUPABASE_KEY   = process.env.SUPABASE_KEY;
-const SUPABASE_TABLE = process.env.SUPABASE_TABLE || "notifications_data";
+const SUPABASE_URL   = (process.env.SUPABASE_URL   || "").trim().replace(/\/$/, "");
+const SUPABASE_KEY   = (process.env.SUPABASE_KEY   || "").trim();
+const SUPABASE_TABLE = (process.env.SUPABASE_TABLE || "notifications_data").trim();
 
 let memoryStore = null;
 
 function supabaseRequest(method, body = null) {
   return new Promise((resolve, reject) => {
-    const host    = SUPABASE_URL.replace("https://", "");
+    const host    = new URL(SUPABASE_URL).hostname;
     const isGet   = method === "GET";
     const options = {
       hostname: host,

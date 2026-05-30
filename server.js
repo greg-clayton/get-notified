@@ -49,6 +49,17 @@ async function writeNotifications(data) {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+app.get("/api/debug", (req, res) => {
+  res.json({
+    nodeVersion:   process.version,
+    fetchAvailable: typeof fetch !== "undefined",
+    supabaseUrlSet: !!SUPABASE_URL,
+    supabaseUrlPreview: SUPABASE_URL ? SUPABASE_URL.slice(0, 40) : "NOT SET",
+    supabaseKeySet: !!SUPABASE_KEY,
+    supabaseTable:  SUPABASE_TABLE,
+  });
+});
+
 app.get("/api/notifications", async (req, res) => {
   try   { res.json(await readNotifications()); }
   catch (e) { console.error(e); res.status(500).json({ error: "Failed to read notifications" }); }

@@ -494,7 +494,7 @@ function StatusCell({ status, onToggle }) {
   if (status === 'Active') return (
     <div className="toggle-wrap">
       <label className="toggle" onClick={e => { e.preventDefault(); onToggle(); }}>
-        <input type="checkbox" defaultChecked readOnly />
+        <input type="checkbox" checked onChange={() => {}} />
         <span className="toggle-slider" />
       </label>
       <span className="toggle-active">Active</span>
@@ -503,7 +503,7 @@ function StatusCell({ status, onToggle }) {
   if (status === 'Expired') return (
     <div className="toggle-wrap">
       <label className="toggle" onClick={e => { e.preventDefault(); onToggle(); }}>
-        <input type="checkbox" readOnly />
+        <input type="checkbox" checked={false} onChange={() => {}} />
         <span className="toggle-slider" />
       </label>
       <span className="toggle-expired">Expired</span>

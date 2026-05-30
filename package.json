@@ -1,0 +1,12 @@
+{
+  "name": "get-notified",
+  "version": "1.0.0",
+  "description": "Get Notified — Notification Management App",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

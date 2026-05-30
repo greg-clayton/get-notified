@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Get Notified</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f1f5f9;
+  color: #0f172a;
+  min-height: 100vh;
+  font-size: 14px;
+}
+input, select, button, textarea { font-family: inherit; }
+button { cursor: pointer; transition: all 0.15s; }
+button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+.page-header {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 20px 32px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.page-title    { font-size: 22px; font-weight: 700; color: #0f172a; }
+.page-subtitle { font-size: 13px; color: #64748b; margin-top: 3px; }
+.page-actions  { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+.page-content  { padding: 24px 32px; }
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  white-space: nowrap; border: none;
+}
+.btn-primary { background: #1e293b; color: white; }
+.btn-primary:hover:not(:disabled) { background: #334155; }
+.btn-outline { background: white; color: #3b82f6; border: 1.5px solid #3b82f6; }
+.btn-outline:hover:not(:disabled) { background: #eff6ff; }
+.btn-ghost   { background: white; color: #64748b; border: 1px solid #e2e8f0; }
+.btn-ghost:hover:not(:disabled)  { background: #f8fafc; }
+.btn-danger  { background: #dc2626; color: white; }
+.btn-danger:hover:not(:disabled) { background: #b91c1c; }
+.btn-amber   { background: #f59e0b; color: white; }
+.btn-amber:hover:not(:disabled)  { background: #d97706; }
+.btn-reset   { background: none; border: none; color: #3b82f6; font-size: 13px; font-weight: 600; padding: 4px 8px; }
+.btn-reset:hover { text-decoration: underline; }
+
+/* ── Stats ──────────────────────────────────────────────────────────────── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+  padding: 18px 20px; display: flex; align-items: center; gap: 14px;
+}
+.stat-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.stat-label { font-size: 12px; color: #64748b; font-weight: 500; margin-bottom: 3px; }
+.stat-count { font-size: 28px; font-weight: 700; color: #0f172a; line-height: 1; }
+
+/* ── Search & Filters ───────────────────────────────────────────────────── */
+.search-filter-row {
+  background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  margin-bottom: 16px; flex-wrap: wrap;
+}
+.search-wrap { position: relative; flex: 0 0 230px; }
+.search-icon-wrap {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  color: #94a3b8; pointer-events: none; display: flex;
+}
+.search-input {
+  width: 100%; padding: 8px 12px 8px 34px;
+  border: 1px solid #e2e8f0; border-radius: 8px;
+  font-size: 13px; color: #0f172a; background: white;
+}
+.search-input:focus { outline: none; border-color: #93c5fd; }
+.filter-label { font-size: 13px; color: #64748b; white-space: nowrap; margin-left: 4px; }
+.filter-group { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+
+/* ── Filter Dropdown ────────────────────────────────────────────────────── */
+.filter-dropdown-wrap { position: relative; }
+.filter-dropdown-btn {
+  background: white; border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 7px 12px; font-size: 13px; color: #0f172a;
+  display: flex; align-items: center; gap: 8px;
+  white-space: nowrap; min-width: 130px; justify-content: space-between;
+  cursor: pointer;
+}
+.filter-dropdown-btn:hover { border-color: #cbd5e1; background: #f8fafc; }
+.filter-dropdown-menu {
+  position: absolute; top: calc(100% + 4px); left: 0;
+  background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+  padding: 6px 0; z-index: 200; min-width: 190px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+.filter-dropdown-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; cursor: pointer; font-size: 13px; color: #0f172a;
+  user-select: none;
+}
+.filter-dropdown-item:hover { background: #f8fafc; }
+.filter-checkbox { width: 16px; height: 16px; accent-color: #3b82f6; cursor: pointer; flex-shrink: 0; }
+
+/* ── Table ──────────────────────────────────────────────────────────────── */
+.table-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  background: #f8fafc; padding: 11px 14px; text-align: left;
+  font-size: 11px; font-weight: 600; color: #64748b;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  border-bottom: 1px solid #e2e8f0; white-space: nowrap;
+  cursor: pointer; user-select: none;
+}
+.data-table th:hover { background: #f1f5f9; }
+.data-table td {
+  padding: 12px 14px; border-bottom: 1px solid #f1f5f9;
+  font-size: 13px; color: #334155; vertical-align: middle;
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: #fafbfc; }
+
+/* ── Badges ─────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; white-space: nowrap;
+}
+.badge-carrier   { background: #fef3c7; color: #92400e; }
+.badge-country   { background: #dbeafe; color: #1e40af; }
+.badge-general   { background: #dcfce7; color: #166534; }
+.badge-critical  { background: #fee2e2; color: #dc2626; }
+.badge-warning   { background: #fef9c3; color: #a16207; }
+.badge-info      { background: #dbeafe; color: #1d4ed8; }
+.badge-scheduled { background: #dbeafe; color: #1d4ed8; }
+.badge-draft     { background: #fef9c3; color: #a16207; }
+
+/* ── Toggle ─────────────────────────────────────────────────────────────── */
+.toggle-wrap { display: flex; align-items: center; gap: 8px; }
+.toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; cursor: pointer; }
+.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-slider {
+  position: absolute; inset: 0; border-radius: 22px;
+  background: #cbd5e1; transition: background 0.2s;
+}
+.toggle-slider::before {
+  content: ''; position: absolute;
+  width: 16px; height: 16px; border-radius: 50%; background: white;
+  top: 3px; left: 3px; transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle input:checked + .toggle-slider { background: #10b981; }
+.toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+.toggle-active  { color: #10b981; font-size: 13px; font-weight: 500; }
+.toggle-expired { color: #94a3b8; font-size: 13px; font-weight: 500; }
+
+/* ── Action icons ───────────────────────────────────────────────────────── */
+.action-btn {
+  background: none; border: none; padding: 6px; border-radius: 6px;
+  color: #94a3b8; display: inline-flex; align-items: center; justify-content: center;
+}
+.action-btn:hover { background: #f1f5f9; color: #64748b; }
+.action-btn.del:hover { background: #fee2e2; color: #dc2626; }
+.action-btn.edt:hover { background: #eff6ff; color: #3b82f6; }
+
+/* ── Row title cell ─────────────────────────────────────────────────────── */
+.title-cell { display: flex; align-items: center; gap: 10px; }
+.row-icon {
+  width: 30px; height: 30px; border-radius: 7px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 15px;
+}
+
+/* ── Pagination ─────────────────────────────────────────────────────────── */
+.pagination-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-top: 1px solid #f1f5f9;
+  font-size: 13px; color: #64748b; flex-wrap: wrap;
+}
+.rows-select {
+  border: 1px solid #e2e8f0; border-radius: 6px;
+  padding: 4px 8px; font-size: 13px; background: white; color: #0f172a;
+}
+.page-nav { display: flex; align-items: center; gap: 3px; margin-left: auto; }
+.page-btn {
+  width: 30px; height: 30px; border-radius: 6px;
+  border: 1px solid #e2e8f0; background: white; color: #334155;
+  font-size: 13px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-weight: 500;
+}
+.page-btn:hover:not(:disabled):not(.active) { background: #f1f5f9; }
+.page-btn.active { background: #1e293b; color: white; border-color: #1e293b; }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.page-ellipsis { padding: 0 4px; color: #94a3b8; }
+
+/* ── Modal ──────────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(15,23,42,0.45); z-index: 500;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.modal-box {
+  background: white; border-radius: 16px; padding: 32px;
+  max-width: 440px; width: 100%;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.15);
+  animation: popIn 0.2s ease both;
+}
+.modal-kicker  { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
+.modal-title   { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+.modal-sub     { font-size: 14px; color: #334155; font-weight: 500; margin-bottom: 10px; }
+.modal-body    { font-size: 13px; color: #64748b; line-height: 1.65; margin-bottom: 26px; }
+.modal-actions { display: flex; gap: 10px; }
+.modal-actions .btn { flex: 1; justify-content: center; }
+
+/* ── Form ───────────────────────────────────────────────────────────────── */
+.form-card {
+  background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+  padding: 28px 32px; max-width: 740px;
+}
+.form-section-title {
+  font-size: 12px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;
+  color: #94a3b8; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;
+}
+.form-field { margin-bottom: 20px; }
+.form-label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.required    { color: #dc2626; margin-left: 2px; }
+.optional    { color: #94a3b8; font-weight: 400; margin-left: 4px; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; padding: 9px 12px; border: 1.5px solid #e2e8f0;
+  border-radius: 8px; font-size: 14px; color: #0f172a; background: white;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none; border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+.form-input.err, .form-select.err { border-color: #dc2626; }
+.form-textarea { resize: vertical; font-family: inherit; }
+.form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.form-error { color: #dc2626; font-size: 12px; margin-top: 4px; }
+.form-hint  { color: #94a3b8; font-size: 12px; margin-top: 4px; }
+.form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
+
+/* ── Empty state ────────────────────────────────────────────────────────── */
+.empty-state { text-align: center; padding: 52px; color: #94a3b8; }
+.empty-state-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state-text { font-size: 14px; }
+
+@keyframes popIn { from { opacity:0; transform:scale(0.95) translateY(8px); } to { opacity:1; transform:none; } }
+
+@media (max-width: 1100px) { .stats-row { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 768px)  {
+  .page-header  { flex-direction: column; padding: 16px; }
+  .page-content { padding: 16px; }
+  .stats-row    { grid-template-columns: repeat(2, 1fr); }
+  .form-row     { grid-template-columns: 1fr; }
+  .filter-group { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SAMPLE DATA
+───────────────────────────────────────────────────────────────────────────── */
+const SAMPLE = [
+  { id:'1',  title:'DHL Express Service Advisory',  type:'Carrier', subType:'DHL',            severity:'Warning',  scheduledDate:'2026-04-01', expiryDate:'2026-04-05', status:'Active',    createdBy:'John Smith',      createdAt:'2026-04-05T10:00:00Z', message:'' },
+  { id:'2',  title:'UPS Pickup Delay',              type:'Carrier', subType:'UPS',            severity:'Info',     scheduledDate:'2026-04-08', expiryDate:'2026-04-12', status:'Active',    createdBy:'Oliver Smith',    createdAt:'2026-04-12T09:00:00Z', message:'' },
+  { id:'3',  title:'FedEx Holiday Schedule',        type:'Carrier', subType:'FedEx',          severity:'Info',     scheduledDate:'2026-04-20', expiryDate:'2026-04-25', status:'Scheduled', createdBy:'Randall Jones',   createdAt:'2026-04-25T08:00:00Z', message:'' },
+  { id:'4',  title:'Canada Shipping Update',        type:'Country', subType:'Canada',         severity:'Critical', scheduledDate:'2026-04-05', expiryDate:'2026-04-08', status:'Active',    createdBy:'Jane Doe',        createdAt:'2026-04-08T11:00:00Z', message:'' },
+  { id:'5',  title:'Australia Customs Notice',      type:'Country', subType:'Australia',      severity:'Warning',  scheduledDate:'2026-04-04', expiryDate:'2026-04-20', status:'Active',    createdBy:'Robert Jones',    createdAt:'2026-04-20T07:00:00Z', message:'' },
+  { id:'6',  title:'UK Shipping Restrictions',      type:'Country', subType:'United Kingdom', severity:'Critical', scheduledDate:'2026-03-22', expiryDate:'2026-03-24', status:'Expired',   createdBy:'Michael Brown',   createdAt:'2026-03-24T10:00:00Z', message:'' },
+  { id:'7',  title:'Local Delivery Advisory',       type:'General', subType:'General',        severity:'Info',     scheduledDate:'2026-04-24', expiryDate:'',           status:'Draft',     createdBy:'Alfie Jones',     createdAt:'2026-04-30T10:00:00Z', message:'' },
+  { id:'8',  title:'Local Delivery Advisory',       type:'General', subType:'General',        severity:'Info',     scheduledDate:'2026-04-18', expiryDate:'2026-04-30', status:'Active',    createdBy:'Harry Taylor',    createdAt:'2026-04-30T09:00:00Z', message:'' },
+  { id:'9',  title:'Local Delivery Advisory',       type:'General', subType:'General',        severity:'Info',     scheduledDate:'2026-04-04', expiryDate:'2026-04-30', status:'Active',    createdBy:'Thomas Williams', createdAt:'2026-04-30T08:00:00Z', message:'' },
+  { id:'10', title:'TNT Service Disruption',        type:'Carrier', subType:'TNT',            severity:'Critical', scheduledDate:'2026-03-15', expiryDate:'2026-03-20', status:'Expired',   createdBy:'Sarah Connor',    createdAt:'2026-03-20T10:00:00Z', message:'' },
+  { id:'11', title:'Germany Import Restrictions',   type:'Country', subType:'Germany',        severity:'Warning',  scheduledDate:'2026-05-01', expiryDate:'2026-05-15', status:'Scheduled', createdBy:'Dave Miller',     createdAt:'2026-04-28T10:00:00Z', message:'' },
+  { id:'12', title:'Holiday Season Notice',         type:'General', subType:'General',        severity:'Info',     scheduledDate:'2026-05-10', expiryDate:'',           status:'Draft',     createdBy:'Emma Wilson',     createdAt:'2026-04-29T10:00:00Z', message:'' },
+  { id:'13', title:'Royal Mail Delay',              type:'Carrier', subType:'Royal Mail',     severity:'Warning',  scheduledDate:'2026-04-15', expiryDate:'2026-04-22', status:'Active',    createdBy:'Liam Turner',     createdAt:'2026-04-22T10:00:00Z', message:'' },
+];
+
+const COUNTRIES = [
+  'Australia','Belgium','Brazil','Canada','China','France','Germany','India',
+  'Italy','Japan','Mexico','Netherlands','New Zealand','Singapore','Spain',
+  'Sweden','United Arab Emirates','United Kingdom','United States',
+];
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   UTILS
+───────────────────────────────────────────────────────────────────────────── */
+const genId  = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
+const fmtDate = s => {
+  if (!s) return '';
+  const d = new Date(s.length === 10 ? s + 'T00:00:00' : s);
+  return d.toLocaleDateString('en-US', { month:'short', day:'2-digit', year:'numeric' });
+};
+
+async function apiGet() {
+  try {
+    const r = await fetch('/api/notifications');
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    return Array.isArray(d) && d.length > 0 ? d : null;
+  } catch { return null; }
+}
+async function apiPost(data) {
+  try { await fetch('/api/notifications', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }); } catch {}
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SVG ICONS
+───────────────────────────────────────────────────────────────────────────── */
+const Icon = ({ d, size=20, color='currentColor', strokeWidth=2 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+    {d}
+  </svg>
+);
+const BellIcon     = (p) => <Icon {...p} d={<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>} />;
+const CalendarIcon = (p) => <Icon {...p} d={<><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>} />;
+const ClockIcon    = (p) => <Icon {...p} d={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} />;
+const XCalIcon     = (p) => <Icon {...p} d={<><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="15" x2="15" y2="21"/><line x1="15" y1="15" x2="9" y2="21"/></>} />;
+const DownloadIcon = (p) => <Icon {...p} d={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>} />;
+const PencilIcon   = (p) => <Icon {...p} d={<><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>} />;
+const TrashIcon    = (p) => <Icon {...p} d={<><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></>} />;
+const SearchIcon   = (p) => <Icon {...p} d={<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>} />;
+const ChevDown     = (p) => <Icon {...p} d={<polyline points="6 9 12 15 18 9"/>} strokeWidth={2.5} />;
+
+const SortArrow = ({ dir }) => {
+  if (dir === 'asc')  return <span style={{marginLeft:3, color:'#3b82f6', fontSize:11}}>▲</span>;
+  if (dir === 'desc') return <span style={{marginLeft:3, color:'#3b82f6', fontSize:11}}>▼</span>;
+  return <span style={{marginLeft:3, color:'#cbd5e1', fontSize:11}}>⇅</span>;
+};
+
+const TYPE_ICON = {
+  Carrier: { emoji:'📦', bg:'#fef3c7' },
+  Country: { emoji:'🌐', bg:'#dbeafe' },
+  General: { emoji:'✅', bg:'#dcfce7' },
+};
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BADGES + STATUS
+───────────────────────────────────────────────────────────────────────────── */
+function TypeBadge({ type }) {
+  const cls = { Carrier:'badge-carrier', Country:'badge-country', General:'badge-general' };
+  return <span className={`badge ${cls[type]||''}`}>{type}</span>;
+}
+
+function SeverityBadge({ severity }) {
+  const cfg = {
+    Critical: { cls:'badge-critical', icon:'🔴' },
+    Warning:  { cls:'badge-warning',  icon:'⚠'  },
+    Info:     { cls:'badge-info',     icon:'ℹ'  },
+  };
+  const { cls, icon } = cfg[severity] || { cls:'', icon:'' };
+  return <span className={`badge ${cls}`}>{icon} {severity}</span>;
+}
+
+function StatusCell({ status, onToggle }) {
+  if (status === 'Active') return (
+    <div className="toggle-wrap">
+      <label className="toggle" onClick={e => { e.preventDefault(); onToggle(); }}>
+        <input type="checkbox" defaultChecked readOnly />
+        <span className="toggle-slider" />
+      </label>
+      <span className="toggle-active">Active</span>
+    </div>
+  );
+  if (status === 'Expired') return (
+    <div className="toggle-wrap">
+      <label className="toggle" onClick={e => { e.preventDefault(); onToggle(); }}>
+        <input type="checkbox" readOnly />
+        <span className="toggle-slider" />
+      </label>
+      <span className="toggle-expired">Expired</span>
+    </div>
+  );
+  if (status === 'Scheduled') return <span className="badge badge-scheduled">Scheduled</span>;
+  if (status === 'Draft')     return <span className="badge badge-draft">Draft</span>;
+  return <span className="badge">{status}</span>;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   FILTER DROPDOWN
+───────────────────────────────────────────────────────────────────────────── */
+function FilterDropdown({ label, options, selected, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+
+  const allSelected  = selected.length === options.length;
+  const displayLabel = allSelected
+    ? `${label}: All`
+    : selected.length === 0 ? `${label}: None` : `${label}: ${selected.length}`;
+
+  const toggleAll = () => onChange(allSelected ? [] : [...options]);
+  const toggleOne = opt => selected.includes(opt)
+    ? onChange(selected.filter(x => x !== opt))
+    : onChange([...selected, opt]);
+
+  return (
+    <div className="filter-dropdown-wrap" ref={ref}>
+      <button className="filter-dropdown-btn" onClick={() => setOpen(o => !o)}>
+        <span>{displayLabel}</span>
+        <ChevDown size={13} />
+      </button>
+      {open && (
+        <div className="filter-dropdown-menu">
+          <div className="filter-dropdown-item" onClick={toggleAll}>
+            <input type="checkbox" className="filter-checkbox" checked={allSelected} readOnly />
+            <span>Select All</span>
+          </div>
+          {options.map(opt => (
+            <div key={opt} className="filter-dropdown-item" onClick={() => toggleOne(opt)}>
+              <input type="checkbox" className="filter-checkbox" checked={selected.includes(opt)} readOnly />
+              <span>{opt}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MODALS
+───────────────────────────────────────────────────────────────────────────── */
+function DeleteModal({ onConfirm, onCancel }) {
+  return (
+    <div className="modal-overlay" onClick={e => e.target===e.currentTarget && onCancel()}>
+      <div className="modal-box">
+        <div className="modal-kicker" style={{color:'#dc2626'}}>DELETE NOTIFICATION?</div>
+        <div className="modal-title">Delete Notification</div>
+        <div className="modal-sub">Are you sure you want to delete this Notification?</div>
+        <div className="modal-body">
+          This action cannot be undone. The notification will be deleted immediately,
+          cannot be recovered and users will no longer see this notification.
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-ghost" onClick={onCancel}>GO BACK</button>
+          <button className="btn btn-danger" onClick={onConfirm}>YES, DELETE</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ExpireModal({ onConfirm, onCancel }) {
+  return (
+    <div className="modal-overlay" onClick={e => e.target===e.currentTarget && onCancel()}>
+      <div className="modal-box">
+        <div className="modal-kicker" style={{color:'#f59e0b'}}>EXPIRE NOTIFICATION?</div>
+        <div className="modal-title">Expire Notification</div>
+        <div className="modal-sub">Are you sure you want to expire this Notification?</div>
+        <div className="modal-body">
+          This notification will expire and will no longer be visible to users.
+          You can reactivate it at any time by editing it.
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-ghost" onClick={onCancel}>GO BACK</button>
+          <button className="btn btn-amber" onClick={onConfirm}>YES, EXPIRE</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   NOTIFICATION MANAGEMENT SCREEN
+───────────────────────────────────────────────────────────────────────────── */
+function NotificationManagement({ notifications, onUpdate, onNavigate }) {
+  const [search,     setSearch]     = useState('');
+  const [typeFilter, setTypeFilter] = useState(['Carrier','Country','General']);
+  const [sevFilter,  setSevFilter]  = useState(['Critical','Warning','Info']);
+  const [statFilter, setStatFilter] = useState(['Active','Scheduled','Draft','Expired']);
+  const [sort,       setSort]       = useState({ col:'createdAt', dir:'desc' });
+  const [page,       setPage]       = useState(1);
+  const [perPage,    setPerPage]    = useState(10);
+  const [deleteId,   setDeleteId]   = useState(null);
+  const [expireId,   setExpireId]   = useState(null);
+
+  const handleSort = col => {
+    setSort(s => ({ col, dir: s.col===col && s.dir==='asc' ? 'desc' : 'asc' }));
+    setPage(1);
+  };
+
+  const handleReset = () => {
+    setSearch('');
+    setTypeFilter(['Carrier','Country','General']);
+    setSevFilter(['Critical','Warning','Info']);
+    setStatFilter(['Active','Scheduled','Draft','Expired']);
+    setSort({ col:'createdAt', dir:'desc' });
+    setPage(1);
+  };
+
+  // Filter + sort
+  const filtered = notifications.filter(n => {
+    if (search && !n.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (!typeFilter.includes(n.type))     return false;
+    if (!sevFilter.includes(n.severity))  return false;
+    if (!statFilter.includes(n.status))   return false;
+    return true;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    const av = a[sort.col] ?? ''; const bv = b[sort.col] ?? '';
+    const cmp = String(av) < String(bv) ? -1 : String(av) > String(bv) ? 1 : 0;
+    return sort.dir === 'asc' ? cmp : -cmp;
+  });
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
+  const safePage   = Math.min(page, totalPages);
+  const pageData   = sorted.slice((safePage-1)*perPage, safePage*perPage);
+
+  // Stats
+  const counts = { Active:0, Scheduled:0, Draft:0, Expired:0 };
+  notifications.forEach(n => { if (n.status in counts) counts[n.status]++; });
+  const total = Object.values(counts).reduce((a,b) => a+b, 0);
+
+  // Actions
+  const doDelete = () => {
+    onUpdate(notifications.filter(n => n.id !== deleteId));
+    setDeleteId(null);
+  };
+  const doExpire = () => {
+    onUpdate(notifications.map(n => n.id === expireId ? { ...n, status:'Expired' } : n));
+    setExpireId(null);
+  };
+  const handleToggle = n => {
+    if (n.status === 'Active')  { setExpireId(n.id); return; }
+    if (n.status === 'Expired') { onNavigate('edit', n); }
+  };
+
+  // Export
+  const handleExport = () => {
+    const hdrs = ['Title','Type','Sub-Type','Severity','Scheduled Date','Expiry Date','Status','Created By','Created On'];
+    const toRow = n => [n.title, n.type, n.subType, n.severity, fmtDate(n.scheduledDate), fmtDate(n.expiryDate), n.status, n.createdBy, fmtDate(n.createdAt)];
+    const wb = XLSX.utils.book_new();
+    ['Active','Scheduled','Draft','Expired'].forEach(s => {
+      const ws = XLSX.utils.aoa_to_sheet([hdrs, ...notifications.filter(n=>n.status===s).map(toRow)]);
+      XLSX.utils.book_append_sheet(wb, ws, s);
+    });
+    XLSX.writeFile(wb, `get-notified-${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
+  // Page buttons
+  const pageButtons = () => {
+    const btns = []; let prev = null;
+    for (let i=1; i<=totalPages; i++) {
+      if (i===1 || i===totalPages || (i>=safePage-2 && i<=safePage+2)) {
+        btns.push(i); prev = i;
+      } else if (prev !== '...') {
+        btns.push('...'); prev = '...';
+      }
+    }
+    return btns;
+  };
+
+  const TH = ({ col, label, style={} }) => (
+    <th onClick={() => handleSort(col)} style={style}>
+      {label}<SortArrow dir={sort.col===col ? sort.dir : null} />
+    </th>
+  );
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <div className="page-title">Notification Management</div>
+          <div className="page-subtitle">Create and manage critical shipping notifications.</div>
+        </div>
+        <div className="page-actions">
+          <button className="btn btn-outline" onClick={handleExport}>
+            <DownloadIcon size={15} /> EXPORT
+          </button>
+          <button className="btn btn-primary" onClick={() => onNavigate('create')}>
+            + CREATE NEW NOTIFICATION
+          </button>
+        </div>
+      </div>
+
+      <div className="page-content">
+
+        {/* Stats panels */}
+        <div className="stats-row">
+          {[
+            { label:'Active',              count:counts.Active,    Icon:BellIcon,     bg:'#ecfdf5', color:'#10b981' },
+            { label:'Scheduled',           count:counts.Scheduled, Icon:CalendarIcon, bg:'#eff6ff', color:'#3b82f6' },
+            { label:'Drafts',              count:counts.Draft,     Icon:ClockIcon,    bg:'#fffbeb', color:'#f59e0b' },
+            { label:'Expired',             count:counts.Expired,   Icon:XCalIcon,     bg:'#fef2f2', color:'#ef4444' },
+            { label:'Total Notifications', count:total,            Icon:BellIcon,     bg:'#f1f5f9', color:'#475569' },
+          ].map(({ label, count, Icon, bg, color }) => (
+            <div key={label} className="stat-card">
+              <div className="stat-icon" style={{ background:bg }}>
+                <Icon size={22} color={color} />
+              </div>
+              <div>
+                <div className="stat-label">{label}</div>
+                <div className="stat-count">{count}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Search + filters */}
+        <div className="search-filter-row">
+          <div className="search-wrap">
+            <span className="search-icon-wrap"><SearchIcon size={15} /></span>
+            <input
+              className="search-input"
+              placeholder="Search notification title"
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+            />
+          </div>
+          <span className="filter-label">Filter by:</span>
+          <div className="filter-group">
+            <FilterDropdown label="Type"     options={['Carrier','Country','General']}          selected={typeFilter} onChange={v => { setTypeFilter(v); setPage(1); }} />
+            <FilterDropdown label="Severity" options={['Critical','Warning','Info']}            selected={sevFilter}  onChange={v => { setSevFilter(v);  setPage(1); }} />
+            <FilterDropdown label="Status"   options={['Active','Scheduled','Draft','Expired']} selected={statFilter} onChange={v => { setStatFilter(v); setPage(1); }} />
+            <button className="btn-reset" onClick={handleReset}>RESET</button>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="table-card">
+          <div style={{ overflowX:'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <TH col="title"         label="Notification Title" style={{minWidth:220}} />
+                  <TH col="type"          label="Type"               style={{minWidth:100}} />
+                  <TH col="subType"       label="Sub-Type"           style={{minWidth:120}} />
+                  <TH col="severity"      label="Severity"           style={{minWidth:115}} />
+                  <TH col="scheduledDate" label="Scheduled Date"     style={{minWidth:140}} />
+                  <TH col="expiryDate"    label="Expiry Date"        style={{minWidth:120}} />
+                  <TH col="status"        label="Status"             style={{minWidth:140}} />
+                  <TH col="createdBy"     label="Created By"         style={{minWidth:130}} />
+                  <TH col="createdAt"     label="Created On"         style={{minWidth:120}} />
+                  <th style={{minWidth:80, cursor:'default'}}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageData.length === 0 ? (
+                  <tr>
+                    <td colSpan={10}>
+                      <div className="empty-state">
+                        <div className="empty-state-icon">🔔</div>
+                        <div className="empty-state-text">No notifications match your filters.</div>
+                      </div>
+                    </td>
+                  </tr>
+                ) : pageData.map(n => {
+                  const ti = TYPE_ICON[n.type] || { emoji:'📋', bg:'#f1f5f9' };
+                  return (
+                    <tr key={n.id}>
+                      <td>
+                        <div className="title-cell">
+                          <div className="row-icon" style={{ background: ti.bg }}>{ti.emoji}</div>
+                          <span style={{ fontWeight:500, color:'#0f172a' }}>{n.title}</span>
+                        </div>
+                      </td>
+                      <td><TypeBadge type={n.type} /></td>
+                      <td>{n.subType}</td>
+                      <td><SeverityBadge severity={n.severity} /></td>
+                      <td>{fmtDate(n.scheduledDate)}</td>
+                      <td>{fmtDate(n.expiryDate)}</td>
+                      <td><StatusCell status={n.status} onToggle={() => handleToggle(n)} /></td>
+                      <td>{n.createdBy}</td>
+                      <td>{fmtDate(n.createdAt)}</td>
+                      <td>
+                        <div style={{ display:'flex', gap:2 }}>
+                          <button className="action-btn edt" title="Edit" onClick={() => onNavigate('edit', n)}><PencilIcon size={15} /></button>
+                          <button className="action-btn del" title="Delete" onClick={() => setDeleteId(n.id)}><TrashIcon size={15} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="pagination-row">
+            <span>Rows per page:</span>
+            <select className="rows-select" value={perPage} onChange={e => { setPerPage(+e.target.value); setPage(1); }}>
+              {[10,25,50,100].map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+            <span>
+              {sorted.length === 0 ? '0 of 0'
+                : `${(safePage-1)*perPage+1}–${Math.min(safePage*perPage, sorted.length)} of ${sorted.length}`}
+            </span>
+            <div className="page-nav">
+              <button className="page-btn" disabled={safePage===1}          onClick={() => setPage(1)}>«</button>
+              <button className="page-btn" disabled={safePage===1}          onClick={() => setPage(p => p-1)}>‹</button>
+              {pageButtons().map((b,i) =>
+                b === '...'
+                  ? <span key={`e${i}`} className="page-ellipsis">…</span>
+                  : <button key={b} className={`page-btn${safePage===b?' active':''}`} onClick={() => setPage(b)}>{b}</button>
+              )}
+              <button className="page-btn" disabled={safePage===totalPages} onClick={() => setPage(p => p+1)}>›</button>
+              <button className="page-btn" disabled={safePage===totalPages} onClick={() => setPage(totalPages)}>»</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {deleteId && <DeleteModal onConfirm={doDelete} onCancel={() => setDeleteId(null)} />}
+      {expireId && <ExpireModal onConfirm={doExpire} onCancel={() => setExpireId(null)} />}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CREATE / EDIT FORM
+───────────────────────────────────────────────────────────────────────────── */
+function NotificationForm({ notification, onSave, onBack }) {
+  const isEdit = !!notification;
+  const [f, setF] = useState({
+    title:         notification?.title         || '',
+    type:          notification?.type          || 'General',
+    subType:       notification?.subType       || 'General',
+    severity:      notification?.severity      || 'Info',
+    scheduledDate: notification?.scheduledDate || '',
+    expiryDate:    notification?.expiryDate    || '',
+    message:       notification?.message       || '',
+    createdBy:     notification?.createdBy     || '',
+  });
+  const [errors, setErrors] = useState({});
+
+  const set = (field, val) => {
+    setF(prev => {
+      const next = { ...prev, [field]: val };
+      if (field === 'type') next.subType = val === 'General' ? 'General' : '';
+      return next;
+    });
+    setErrors(e => ({ ...e, [field]: undefined }));
+  };
+
+  const validate = () => {
+    const e = {};
+    if (!f.title.trim())     e.title         = 'Title is required';
+    if (!f.createdBy.trim()) e.createdBy      = 'Created by is required';
+    if (!f.scheduledDate)    e.scheduledDate  = 'Scheduled date is required';
+    if (f.type !== 'General' && !f.subType.trim()) e.subType = 'Sub-type is required';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const determineStatus = asDraft => {
+    if (asDraft || !f.scheduledDate) return 'Draft';
+    return new Date(f.scheduledDate + 'T00:00:00') > new Date() ? 'Scheduled' : 'Active';
+  };
+
+  const handleSubmit = asDraft => {
+    if (!validate()) return;
+    const saved = {
+      id:        notification?.id || genId(),
+      ...f,
+      status:    isEdit ? notification.status : determineStatus(asDraft),
+      createdAt: notification?.createdAt || new Date().toISOString(),
+    };
+    onSave(saved, isEdit);
+  };
+
+  return (
+    <div>
+      <div className="page-header">
+        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+          <button className="btn btn-ghost" style={{padding:'7px 14px', fontSize:12}} onClick={onBack}>← Back</button>
+          <div>
+            <div className="page-title">{isEdit ? 'Edit Notification' : 'Create New Notification'}</div>
+            <div className="page-subtitle">
+              {isEdit ? 'Update the details below and save your changes.' : 'Fill in the details to create a new notification.'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="page-content">
+        <div className="form-card">
+
+          <div className="form-section-title">Notification Details</div>
+
+          <div className="form-field">
+            <label className="form-label">Notification Title <span className="required">*</span></label>
+            <input className={`form-input${errors.title?' err':''}`} value={f.title} onChange={e=>set('title',e.target.value)} placeholder="Enter notification title" />
+            {errors.title && <div className="form-error">{errors.title}</div>}
+          </div>
+
+          <div className="form-row">
+            <div className="form-field">
+              <label className="form-label">Type <span className="required">*</span></label>
+              <select className="form-select" value={f.type} onChange={e=>set('type',e.target.value)}>
+                <option>Carrier</option>
+                <option>Country</option>
+                <option>General</option>
+              </select>
+            </div>
+            <div className="form-field">
+              <label className="form-label">
+                Sub-Type {f.type !== 'General' ? <span className="required">*</span> : <span className="optional">(auto)</span>}
+              </label>
+              {f.type === 'General' ? (
+                <input className="form-input" value="General" disabled style={{background:'#f8fafc', color:'#94a3b8'}} />
+              ) : f.type === 'Country' ? (
+                <select className={`form-select${errors.subType?' err':''}`} value={f.subType} onChange={e=>set('subType',e.target.value)}>
+                  <option value="">Select a country…</option>
+                  {COUNTRIES.map(c => <option key={c}>{c}</option>)}
+                </select>
+              ) : (
+                <input className={`form-input${errors.subType?' err':''}`} value={f.subType} onChange={e=>set('subType',e.target.value)} placeholder="e.g. DHL, UPS, FedEx" />
+              )}
+              {errors.subType && <div className="form-error">{errors.subType}</div>}
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label className="form-label">Severity <span className="required">*</span></label>
+            <select className="form-select" value={f.severity} onChange={e=>set('severity',e.target.value)}>
+              <option>Critical</option>
+              <option>Warning</option>
+              <option>Info</option>
+            </select>
+          </div>
+
+          <div className="form-section-title" style={{marginTop:8}}>Scheduling</div>
+
+          <div className="form-row">
+            <div className="form-field">
+              <label className="form-label">Scheduled Date <span className="required">*</span></label>
+              <input type="date" className={`form-input${errors.scheduledDate?' err':''}`} value={f.scheduledDate} onChange={e=>set('scheduledDate',e.target.value)} />
+              {errors.scheduledDate && <div className="form-error">{errors.scheduledDate}</div>}
+              <div className="form-hint">If date is in the future, status will be set to Scheduled.</div>
+            </div>
+            <div className="form-field">
+              <label className="form-label">Expiry Date <span className="optional">(optional)</span></label>
+              <input type="date" className="form-input" value={f.expiryDate} onChange={e=>set('expiryDate',e.target.value)} />
+              <div className="form-hint">Notification will auto-expire on this date.</div>
+            </div>
+          </div>
+
+          <div className="form-section-title" style={{marginTop:8}}>Message</div>
+
+          <div className="form-field">
+            <label className="form-label">Notification Message <span className="optional">(optional)</span></label>
+            <textarea className="form-textarea" rows={4} value={f.message} onChange={e=>set('message',e.target.value)} placeholder="Enter the notification message shown to users…" />
+          </div>
+
+          <div className="form-section-title" style={{marginTop:8}}>Created By</div>
+
+          <div className="form-field">
+            <label className="form-label">Your Name <span className="required">*</span></label>
+            <input className={`form-input${errors.createdBy?' err':''}`} value={f.createdBy} onChange={e=>set('createdBy',e.target.value)} placeholder="Enter your name" />
+            {errors.createdBy && <div className="form-error">{errors.createdBy}</div>}
+          </div>
+
+          <div className="form-actions">
+            <button className="btn btn-ghost" onClick={onBack}>Cancel</button>
+            {!isEdit && <button className="btn btn-outline" onClick={() => handleSubmit(true)}>Save as Draft</button>}
+            <button className="btn btn-primary" onClick={() => handleSubmit(false)}>
+              {isEdit ? 'Update Notification' : 'Create Notification'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   APP ROOT
+───────────────────────────────────────────────────────────────────────────── */
+function App() {
+  const [notifications, setNotifications] = useState(SAMPLE);
+  const [screen,        setScreen]        = useState('list');
+  const [editing,       setEditing]       = useState(null);
+  const [loaded,        setLoaded]        = useState(false);
+
+  useEffect(() => {
+    apiGet().then(data => {
+      if (data) setNotifications(data);
+      setLoaded(true);
+    });
+  }, []);
+
+  const handleUpdate = data => {
+    setNotifications(data);
+    apiPost(data);
+  };
+
+  const handleNavigate = (s, n=null) => { setEditing(n); setScreen(s); };
+
+  const handleSave = (saved, isEdit) => {
+    const next = isEdit
+      ? notifications.map(n => n.id===saved.id ? saved : n)
+      : [saved, ...notifications];
+    handleUpdate(next);
+    setScreen('list');
+  };
+
+  if (screen === 'create' || screen === 'edit') {
+    return <NotificationForm notification={editing} onSave={handleSave} onBack={() => setScreen('list')} />;
+  }
+  return <NotificationManagement notifications={notifications} onUpdate={handleUpdate} onNavigate={handleNavigate} />;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

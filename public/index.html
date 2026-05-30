@@ -773,8 +773,8 @@ function NotificationManagement({ notifications, onUpdate, onNavigate, toast }) 
               onChange={e => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
-          <span className="filter-label">Filter by:</span>
           <div className="filter-group">
+            <span className="filter-label">Filter by:</span>
             <FilterDropdown label="Type"     options={['Carrier','Country','General']}          selected={typeFilter} onChange={v => { setTypeFilter(v); setPage(1); }} />
             <FilterDropdown label="Severity" options={['Critical','Warning','Info']}            selected={sevFilter}  onChange={v => { setSevFilter(v);  setPage(1); }} />
             <FilterDropdown label="Status"   options={['Active','Scheduled','Draft','Expired']} selected={statFilter} onChange={v => { setStatFilter(v); setPage(1); }} />

@@ -323,21 +323,19 @@ async function getConfig() {
 
 async function apiGet() {
   const cfg = await getConfig();
-  console.log('Supabase config:', JSON.stringify({ url: cfg?.supabaseUrl, table: cfg?.supabaseTable, keyLen: cfg?.supabaseKey?.length }));
-  if (!cfg?.supabaseUrl || !cfg?.supabaseKey) { console.error('No Supabase config'); return null; }
-  const url = `${cfg.supabaseUrl}/rest/v1/${cfg.supabaseTable}?id=eq.1&select=data`;
-  console.log('Fetching:', url);
-  const r = await fetch(url, { headers: { 'apikey': cfg.supabaseKey, 'Authorization': `Bearer ${cfg.supabaseKey}` } });
-  const text = await r.text();
-  console.log('apiGet status:', r.status, 'body:', text);
-  if (!r.ok) throw new Error(text);
-  const rows = JSON.parse(text);
+  if (!cfg?.supabaseUrl || !cfg?.supabaseKey) return null;
+  const r = await fetch(
+    `${cfg.supabaseUrl}/rest/v1/${cfg.supabaseTable}?id=eq.1&select=data`,
+    { headers: { 'apikey': cfg.supabaseKey, 'Authorization': `Bearer ${cfg.supabaseKey}` } }
+  );
+  if (!r.ok) return null;
+  const rows = await r.json();
   return Array.isArray(rows[0]?.data) ? rows[0].data : null;
 }
 
 async function apiPost(notifications) {
   const cfg = await getConfig();
-  if (!cfg?.supabaseUrl || !cfg?.supabaseKey) { console.error('No Supabase config'); return false; }
+  if (!cfg?.supabaseUrl || !cfg?.supabaseKey) return false;
   const r = await fetch(
     `${cfg.supabaseUrl}/rest/v1/${cfg.supabaseTable}`,
     {
@@ -351,8 +349,6 @@ async function apiPost(notifications) {
       body: JSON.stringify({ id: 1, data: notifications }),
     }
   );
-  const text = await r.text();
-  console.log('apiPost status:', r.status, 'body:', text);
   return r.ok;
 }
 

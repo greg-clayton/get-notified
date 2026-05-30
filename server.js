@@ -62,7 +62,7 @@ app.get("/api/debug", (req, res) => {
 
 app.get("/api/notifications", async (req, res) => {
   try   { res.json(await readNotifications()); }
-  catch (e) { console.error(e); res.status(500).json({ error: "Failed to read notifications" }); }
+  catch (e) { console.error(e); res.status(500).json({ error: "Failed to read notifications", detail: e.message }); }
 });
 
 app.post("/api/notifications", async (req, res) => {

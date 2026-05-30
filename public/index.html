@@ -616,7 +616,7 @@ function NotificationManagement({ notifications, onUpdate, onNavigate }) {
 
   // Export
   const handleExport = () => {
-    const hdrs = ['Title','Type','Sub-Type','Severity','Scheduled Date','Expiry Date','Status','Created By','Created On'];
+    const hdrs = ['Title','Type','Sub-Type','Severity','Scheduled Date','Expiry Date','Status','Last Modified By','Last Modified On'];
     const toRow = n => [n.title, n.type, n.subType, n.severity, fmtDate(n.scheduledDate), fmtDate(n.expiryDate), n.status, n.createdBy, fmtDate(n.createdAt)];
     const wb = XLSX.utils.book_new();
     ['Active','Scheduled','Draft','Expired'].forEach(s => {
@@ -719,8 +719,7 @@ function NotificationManagement({ notifications, onUpdate, onNavigate }) {
                   <TH col="scheduledDate" label="Scheduled Date"     style={{minWidth:140}} />
                   <TH col="expiryDate"    label="Expiry Date"        style={{minWidth:120}} />
                   <TH col="status"        label="Status"             style={{minWidth:140}} />
-                  <TH col="createdBy"     label="Created By"         style={{minWidth:130}} />
-                  <TH col="createdAt"     label="Created On"         style={{minWidth:120}} />
+                  <TH col="createdAt"     label="Last Modified By"   style={{minWidth:160}} />
                   <th style={{minWidth:80, cursor:'default'}}>Actions</th>
                 </tr>
               </thead>
@@ -750,8 +749,10 @@ function NotificationManagement({ notifications, onUpdate, onNavigate }) {
                       <td>{fmtDate(n.scheduledDate)}</td>
                       <td>{fmtDate(n.expiryDate)}</td>
                       <td><StatusCell status={n.status} onToggle={() => handleToggle(n)} /></td>
-                      <td>{n.createdBy}</td>
-                      <td>{fmtDate(n.createdAt)}</td>
+                      <td>
+                        <div style={{fontWeight:500}}>{n.createdBy}</div>
+                        <div style={{fontSize:12,color:'#64748b',marginTop:2}}>{fmtDate(n.createdAt)}</div>
+                      </td>
                       <td>
                         <div style={{ display:'flex', gap:2 }}>
                           <button className="action-btn edt" title="Edit" onClick={() => onNavigate('edit', n)}><PencilIcon size={15} /></button>

@@ -1,6 +1,5 @@
 const express = require("express");
 const path    = require("path");
-const https   = require("https");
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -11,35 +10,27 @@ const SUPABASE_TABLE = (process.env.SUPABASE_TABLE || "notifications_data").trim
 
 let memoryStore = null;
 
-function supabaseRequest(method, body = null) {
-  return new Promise((resolve, reject) => {
-    const host    = new URL(SUPABASE_URL).hostname;
-    const isGet   = method === "GET";
-    const options = {
-      hostname: host,
-      path:     `/rest/v1/${SUPABASE_TABLE}?id=eq.1${isGet ? "&select=data" : ""}`,
-      method:   isGet ? "GET" : "PATCH",
-      headers: {
-        "apikey":        SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Content-Type":  "application/json",
-        "Prefer":        "return=minimal",
-      },
-    };
-    const req = https.request(options, (res) => {
-      let raw = "";
-      res.on("data", chunk => raw += chunk);
-      res.on("end", () => {
-        if (isGet) {
-          try   { resolve(JSON.parse(raw)[0]?.data || []); }
-          catch { reject(new Error("Invalid JSON from Supabase")); }
-        } else { resolve(); }
-      });
-    });
-    req.on("error", reject);
-    if (body !== null) req.write(JSON.stringify(body));
-    req.end();
+async function supabaseRequest(method, body = null) {
+  const isGet = method === "GET";
+  const url   = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.1${isGet ? "&select=data" : ""}`;
+  const res   = await fetch(url, {
+    method:  isGet ? "GET" : "PATCH",
+    headers: {
+      "apikey":        SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Content-Type":  "application/json",
+      "Prefer":        "return=minimal",
+    },
+    body: body !== null ? JSON.stringify(body) : undefined,
   });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Supabase ${res.status}: ${text}`);
+  }
+  if (isGet) {
+    const json = await res.json();
+    return json[0]?.data || [];
+  }
 }
 
 async function readNotifications() {

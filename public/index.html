@@ -33,6 +33,11 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   justify-content: space-between;
   gap: 16px;
 }
+.page-header.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
 .page-title    { font-size: 22px; font-weight: 700; color: #0f172a; }
 .page-subtitle { font-size: 13px; color: #64748b; margin-top: 3px; }
 .page-actions  { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
@@ -722,7 +727,7 @@ function NotificationManagement({ notifications, onUpdate, onNavigate, toast }) 
   return (
     <div>
       {/* Header */}
-      <div className="page-header">
+      <div className="page-header sticky">
         <div>
           <div className="page-title">Notification Management</div>
           <div className="page-subtitle">Create and manage critical shipping notifications.</div>

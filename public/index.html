@@ -967,6 +967,7 @@ function NotificationForm({ notification, onSave, onBack }) {
     if (!asDraft && !validate()) return;
     const saved = {
       id:           isEdit ? genId() : (notification?.id || genId()),
+      _oldId:       isEdit ? notification.id : undefined,
       title:        f.title,
       type:         f.type || 'General',
       subType:      f.type === 'General' ? 'General' : f.subType,
@@ -1279,9 +1280,10 @@ function App() {
   const handleNavigate = (s, n=null) => { setEditing(n); setScreen(s); };
 
   const handleSave = (saved, isEdit, saveType) => {
+    const { _oldId, ...cleanSaved } = saved;
     const next = isEdit
-      ? notifications.map(n => n.id===saved.id ? saved : n)
-      : [saved, ...notifications];
+      ? notifications.map(n => n.id === _oldId ? cleanSaved : n)
+      : [cleanSaved, ...notifications];
     handleUpdate(next);
     showToast(TOAST_MSGS[isEdit ? 'edit' : 'create'][saveType] || TOAST_MSGS.create.active);
     setScreen('list');

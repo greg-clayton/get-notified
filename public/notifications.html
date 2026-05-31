@@ -80,14 +80,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
     <h1>Notifications</h1>
     <p>Stay informed with real-time shipping notifications from your trusted carriers.</p>
   </div>
-  <div class="fn-header-right">
-    <div class="fn-search-wrap">
-      <div class="fn-search-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      </div>
-      <input class="fn-search" id="search" type="text" placeholder="Search here...." oninput="applyFilters()"/>
-    </div>
-  </div>
 </div>
 
 <!-- Content -->
@@ -106,6 +98,13 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
       <option value="severity">Sort By: Severity</option>
     </select>
     <input type="date" class="fn-date-input" id="date-filter" onchange="applyFilters()"/>
+    <div class="fn-toolbar-sep"></div>
+    <div class="fn-search-wrap">
+      <div class="fn-search-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </div>
+      <input class="fn-search" id="search" type="text" placeholder="Search here...." oninput="applyFilters()"/>
+    </div>
     <button class="fn-mark-read fn-ml-auto" onclick="markAllRead()">Mark all as read</button>
   </div>
 

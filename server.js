@@ -41,36 +41,44 @@ async function sbFetch(path, opts = {}) {
   });
 }
 
-async function loadCloudReadIds() {
-  if (!SUPABASE_URL || !SUPABASE_KEY) return [];
+async function loadCloudState() {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return { readIds: [], pinnedIds: [] };
   try {
     const r = await sbFetch('?id=eq.2&select=data');
     const rows = await r.json();
-    return rows[0]?.data?.readIds || [];
-  } catch { return []; }
+    const data = rows[0]?.data || {};
+    return { readIds: data.readIds || [], pinnedIds: data.pinnedIds || [] };
+  } catch { return { readIds: [], pinnedIds: [] }; }
 }
 
-async function saveCloudReadIds(merged) {
+async function saveCloudState({ readIds, pinnedIds }) {
   if (!SUPABASE_URL || !SUPABASE_KEY) return;
   await sbFetch('', {
     method: 'POST',
     headers: { Prefer: 'resolution=merge-duplicates' },
-    body: JSON.stringify({ id: 2, data: { readIds: merged } })
+    body: JSON.stringify({ id: 2, data: { readIds, pinnedIds } })
   });
 }
 
 app.get('/api/read-state', async (req, res) => {
   try {
-    res.json({ readIds: await loadCloudReadIds() });
-  } catch { res.json({ readIds: [] }); }
+    res.json(await loadCloudState());
+  } catch { res.json({ readIds: [], pinnedIds: [] }); }
 });
 
 app.post('/api/read-state', async (req, res) => {
-  const incoming = Array.isArray(req.body?.readIds) ? req.body.readIds : [];
+  const body = req.body || {};
+  const incomingReadIds   = Array.isArray(body.readIds)   ? body.readIds   : null;
+  const incomingPinnedIds = Array.isArray(body.pinnedIds) ? body.pinnedIds : null;
   try {
-    const existing = await loadCloudReadIds();
-    const merged = [...new Set([...existing, ...incoming])];
-    await saveCloudReadIds(merged);
+    const existing = await loadCloudState();
+    // readIds: union merge (reads only accumulate)
+    const mergedReadIds = incomingReadIds !== null
+      ? [...new Set([...existing.readIds, ...incomingReadIds])]
+      : existing.readIds;
+    // pinnedIds: replacement (latest write wins); omitting field = no change
+    const newPinnedIds = incomingPinnedIds !== null ? incomingPinnedIds : existing.pinnedIds;
+    await saveCloudState({ readIds: mergedReadIds, pinnedIds: newPinnedIds });
     res.json({ ok: true });
   } catch (e) {
     console.error('read-state save failed:', e.message);

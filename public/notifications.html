@@ -83,6 +83,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .fn-pg-btn:hover:not(:disabled){background:#f1f5f9;border-color:#cbd5e1}
 .fn-pg-btn:disabled{color:#cbd5e1;cursor:default;border-color:#f1f5f9;background:white}
 .fn-pg-current{font-size:13px;font-weight:600;color:#0f172a;padding:5px 10px;border:1px solid #3b82f6;border-radius:6px;background:#eff6ff;min-width:32px;text-align:center;line-height:1}
+
+/* ── Pin button ── */
+.fn-pin-btn{background:none;border:none;color:#94a3b8;cursor:pointer;padding:3px 4px;flex-shrink:0;display:flex;align-items:center;border-radius:5px;transition:color 0.15s,background 0.15s}
+.fn-pin-btn:hover{color:#f59e0b;background:#fef3c7}
+.fn-pin-btn.pinned{color:#f59e0b}
 </style>
 </head>
 <body>
@@ -145,7 +150,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 
 <script>
 // ── Constants ──────────────────────────────────────────────────────────
-const LS_KEY = 'gn_read_ids';
+const LS_KEY        = 'gn_read_ids';
+const LS_PINNED_KEY = 'gn_pinned_ids';
 const RECENT_DAYS = 7;
 
 const TYPE_ICONS = {
@@ -168,20 +174,24 @@ let currentPage  = 1;
 let rowsPerPage  = 10;
 
 // ── Helpers ────────────────────────────────────────────────────────────
-function getReadIds(){ try{ return new Set(JSON.parse(localStorage.getItem(LS_KEY)||'[]')); }catch{ return new Set(); } }
+function getReadIds()  { try{ return new Set(JSON.parse(localStorage.getItem(LS_KEY)||'[]'));        }catch{ return new Set(); } }
 function saveReadIds(s){ localStorage.setItem(LS_KEY, JSON.stringify([...s])); }
-function readKey(n){ return (n.id||'')+'|'+(n.createdAt||''); }
+function readKey(n)    { return (n.id||'')+'|'+(n.createdAt||''); }
+function getPinnedIds()  { try{ return new Set(JSON.parse(localStorage.getItem(LS_PINNED_KEY)||'[]')); }catch{ return new Set(); } }
+function savePinnedIds(s){ localStorage.setItem(LS_PINNED_KEY, JSON.stringify([...s])); }
 
-// ── Cloud read-state sync (cross-origin with dashboard) ─────────────────
-async function getCloudReadIds(){
+// ── Cloud read/pin state sync (cross-origin with dashboard) ────────────
+async function getCloudState(){
   try{
     const r = await fetch('/api/read-state');
     const j = await r.json();
-    return new Set(j.readIds || []);
-  } catch { return new Set(); }
+    return { readIds: new Set(j.readIds || []), pinnedIds: new Set(j.pinnedIds || []) };
+  } catch { return { readIds: new Set(), pinnedIds: new Set() }; }
 }
-function syncToCloud(rid){
-  fetch('/api/read-state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({readIds:[...rid]})}).catch(()=>{});
+function syncToCloud(){
+  const rid  = getReadIds();
+  const pids = getPinnedIds();
+  fetch('/api/read-state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({readIds:[...rid],pinnedIds:[...pids]})}).catch(()=>{});
 }
 
 function timeAgo(iso){
@@ -202,13 +212,37 @@ function svgIcon(d, size, color){
 function chevDown(){ return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>`; }
 function chevUp()  { return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>`; }
 
+// ── Pin helpers ────────────────────────────────────────────────────────
+function pinIcon(pinned){
+  const col  = pinned ? '#f59e0b' : '#94a3b8';
+  const fill = pinned ? col : 'none';
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="${fill}" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h.5a2 2 0 0 0 0-4h-7a2 2 0 0 0 0 4H9v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/><line x1="12" y1="17" x2="12" y2="22"/></svg>`;
+}
+
+function togglePin(id, event){
+  event.stopPropagation();
+  const pids = getPinnedIds();
+  if(pids.has(id)) pids.delete(id); else pids.add(id);
+  savePinnedIds(pids);
+  const p = pids.has(id);
+  const btn = document.getElementById('pin-'+id);
+  if(btn){
+    btn.className = 'fn-pin-btn' + (p ? ' pinned' : '');
+    btn.title = p ? 'Unpin' : 'Pin to favourites';
+    btn.innerHTML = pinIcon(p);
+  }
+  syncToCloud();
+}
+
 // ── Render ─────────────────────────────────────────────────────────────
 function renderItem(n){
-  const ti   = TYPE_ICONS[n.type]  || TYPE_ICONS.General;
-  const si   = SEV_ICONS[n.severity] || SEV_ICONS.Info;
-  const rid  = getReadIds();
-  const rkey = readKey(n);
-  const read = rid.has(rkey);
+  const ti     = TYPE_ICONS[n.type]    || TYPE_ICONS.General;
+  const si     = SEV_ICONS[n.severity] || SEV_ICONS.Info;
+  const rid    = getReadIds();
+  const pids   = getPinnedIds();
+  const rkey   = readKey(n);
+  const read   = rid.has(rkey);
+  const pinned = pids.has(n.id);
   const prefix = (n.subType && n.subType !== n.type && n.subType !== 'General')
     ? `<span style="color:${ti.color}">[${esc(n.subType)}]</span> `
     : (n.type && n.type !== 'General' ? `<span style="color:${ti.color}">[${esc(n.type)}]</span> ` : '');
@@ -219,6 +253,7 @@ function renderItem(n){
       <div class="fn-item-body">
         <div class="fn-item-row1">
           <div class="fn-item-title">${prefix}${esc(n.title)}</div>
+          <button class="fn-pin-btn${pinned?' pinned':''}" id="pin-${n.id}" onclick="togglePin('${n.id}',event)" title="${pinned?'Unpin':'Pin to favourites'}">${pinIcon(pinned)}</button>
           <button class="fn-item-expand" id="exp-${n.id}" onclick="toggleExpand(event,'${n.id}')" style="display:none">${chevDown()}</button>
         </div>
         <div class="fn-item-msg clamp" id="msg-${n.id}">${esc(n.message||'')}</div>
@@ -267,7 +302,7 @@ function handleClick(el){
   rid.add(rkey); saveReadIds(rid);
   const dot = document.getElementById('dot-'+id);
   if(dot) dot.remove();
-  syncToCloud(rid);
+  syncToCloud();
 }
 
 function markAllRead(){
@@ -275,7 +310,7 @@ function markAllRead(){
   allNotifs.forEach(n => rid.add(readKey(n)));
   saveReadIds(rid);
   document.querySelectorAll('.fn-dot').forEach(d => d.remove());
-  syncToCloud(rid);
+  syncToCloud();
 }
 
 // ── Filter & Sort ──────────────────────────────────────────────────────
@@ -391,21 +426,23 @@ function changeRowsPerPage(val){
 // ── Data Fetch ─────────────────────────────────────────────────────────
 async function loadData(){
   try{
-    // Fetch config + cloud read state in parallel
-    const [cfg, cloudRid] = await Promise.all([
+    // Fetch config + cloud state in parallel
+    const [cfg, cloudState] = await Promise.all([
       fetch('/api/config').then(r=>r.json()),
-      getCloudReadIds()
+      getCloudState()
     ]);
     if(!cfg?.supabaseUrl || !cfg?.supabaseKey){ showError(); return; }
 
     // Merge cloud read IDs into local (union — reads only accumulate)
-    if(cloudRid.size > 0){
+    if(cloudState.readIds.size > 0){
       const local = getReadIds();
-      const merged = new Set([...local, ...cloudRid]);
+      const merged = new Set([...local, ...cloudState.readIds]);
       saveReadIds(merged);
     }
+    // Sync pinned IDs — cloud is authoritative (replacement)
+    savePinnedIds(cloudState.pinnedIds);
     // Always push local state back to cloud so dashboard picks up reads done here
-    syncToCloud(getReadIds());
+    syncToCloud();
 
     const rows = await fetch(
       `${cfg.supabaseUrl}/rest/v1/${cfg.supabaseTable||'notifications_data'}?id=eq.1&select=data`,

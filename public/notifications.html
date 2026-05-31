@@ -461,8 +461,45 @@ function showError(){
   document.getElementById('fn-list').innerHTML = '<div class="fn-empty">Could not load notifications.</div>';
 }
 
+// ── Lightweight fast sync (pin + read state only, no full re-render) ───
+async function syncOnlyPoll(){
+  try{
+    const cloudState = await getCloudState();
+
+    // readIds — union merge, remove newly-read dots from DOM
+    const local  = getReadIds();
+    const merged = new Set([...local, ...cloudState.readIds]);
+    if(merged.size > local.size){
+      saveReadIds(merged);
+      merged.forEach(rkey => {
+        if(!local.has(rkey)){
+          const n = allNotifs.find(x => readKey(x) === rkey);
+          if(n){ const dot = document.getElementById('dot-'+n.id); if(dot) dot.remove(); }
+        }
+      });
+    }
+
+    // pinnedIds — replacement, update visible pin buttons if changed
+    const localPids = getPinnedIds();
+    const cloudPids = cloudState.pinnedIds;
+    const same = cloudPids.size === localPids.size && [...cloudPids].every(id => localPids.has(id));
+    if(!same){
+      savePinnedIds(cloudPids);
+      allNotifs.forEach(n => {
+        const btn = document.getElementById('pin-'+n.id);
+        if(!btn) return;
+        const p = cloudPids.has(n.id);
+        btn.className = 'fn-pin-btn' + (p ? ' pinned' : '');
+        btn.title = p ? 'Unpin' : 'Pin to favourites';
+        btn.innerHTML = pinIcon(p);
+      });
+    }
+  } catch{}
+}
+
 loadData();
 setInterval(loadData, 30000);
+setInterval(syncOnlyPoll, 5000);
 </script>
 </body>
 </html>

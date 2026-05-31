@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Notifications</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#f1f5f9;color:#0f172a;min-height:100vh;font-size:14px}
+
+/* ── Header ── */
+.fn-header{background:white;border-bottom:1px solid #e2e8f0;padding:18px 32px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:100}
+.fn-header-left h1{font-size:22px;font-weight:700;color:#0f172a}
+.fn-header-left p{font-size:13px;color:#64748b;margin-top:3px}
+.fn-header-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.fn-search-wrap{position:relative}
+.fn-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none}
+.fn-search{padding:8px 12px 8px 34px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;width:220px;outline:none;font-family:inherit}
+.fn-search:focus{border-color:#93c5fd}
+.fn-open-out{background:none;border:1px solid #e2e8f0;border-radius:8px;padding:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b}
+.fn-open-out:hover{background:#f8fafc;color:#0f172a}
+
+/* ── Content ── */
+.fn-content{padding:24px 32px;max-width:960px;margin:0 auto}
+
+/* ── Toolbar ── */
+.fn-toolbar{background:white;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.fn-type-label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.6px;white-space:nowrap}
+.fn-chk-item{display:flex;align-items:center;gap:5px;font-size:13px;color:#334155;cursor:pointer;user-select:none;white-space:nowrap}
+.fn-chk-item input{accent-color:#3b82f6;width:15px;height:15px;cursor:pointer}
+.fn-sort-select,.fn-date-input{border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;background:white;color:#0f172a;outline:none;font-family:inherit;cursor:pointer}
+.fn-toolbar-sep{width:1px;height:24px;background:#e2e8f0;flex-shrink:0}
+.fn-ml-auto{margin-left:auto}
+
+/* ── Section ── */
+.fn-section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.fn-section-title{font-size:14px;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:8px}
+.fn-count{background:#e2e8f0;border-radius:99px;padding:2px 9px;font-size:12px;font-weight:600;color:#475569}
+.fn-mark-read{background:none;border:none;color:#3b82f6;font-size:13px;font-weight:600;cursor:pointer;padding:0}
+.fn-mark-read:hover{text-decoration:underline}
+
+/* ── Notification Item ── */
+.fn-item{background:white;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin-bottom:10px;display:flex;gap:14px;cursor:pointer;transition:box-shadow 0.15s}
+.fn-item:hover{box-shadow:0 2px 12px rgba(0,0,0,0.07)}
+.fn-item-icon{width:44px;height:44px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.fn-item-body{flex:1;min-width:0}
+.fn-item-row1{display:flex;align-items:flex-start;gap:8px}
+.fn-item-title{font-size:14px;font-weight:700;color:#0f172a;flex:1;line-height:1.35}
+.fn-item-expand{background:none;border:none;color:#94a3b8;cursor:pointer;padding:3px;flex-shrink:0;display:flex;align-items:center}
+.fn-item-expand:hover{color:#64748b}
+.fn-item-msg{font-size:13px;color:#475569;margin-top:6px;line-height:1.6}
+.fn-item-msg.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fn-item-footer{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.fn-item-time{font-size:12px;color:#94a3b8;margin-left:auto;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.fn-dot{width:8px;height:8px;border-radius:50%;background:#10b981;flex-shrink:0;box-shadow:0 0 6px rgba(16,185,129,0.5)}
+
+/* ── Severity Pills ── */
+.sev-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+.sev-critical{background:#fee2e2;color:#dc2626}
+.sev-warning {background:#fef9c3;color:#a16207}
+.sev-info    {background:#dbeafe;color:#1d4ed8}
+
+/* ── Show older ── */
+.fn-show-older{width:100%;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:14px;text-align:center;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit}
+.fn-show-older:hover{background:#f8fafc}
+
+/* ── Empty ── */
+.fn-empty{text-align:center;padding:52px;color:#94a3b8;font-size:14px}
+.fn-loading{text-align:center;padding:40px;color:#94a3b8;font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="fn-header">
+  <div class="fn-header-left">
+    <h1>Notifications</h1>
+    <p>Stay informed with real-time shipping notifications from your trusted carriers.</p>
+  </div>
+  <div class="fn-header-right">
+    <div class="fn-search-wrap">
+      <div class="fn-search-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </div>
+      <input class="fn-search" id="search" type="text" placeholder="Search here...." oninput="applyFilters()"/>
+    </div>
+    <button class="fn-open-out" onclick="window.open(location.href,'_blank')" title="Open in new tab">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Content -->
+<div class="fn-content">
+
+  <!-- Toolbar -->
+  <div class="fn-toolbar">
+    <span class="fn-type-label">TYPE</span>
+    <label class="fn-chk-item"><input type="checkbox" id="chk-carrier" checked onchange="applyFilters()"> Carrier</label>
+    <label class="fn-chk-item"><input type="checkbox" id="chk-country" checked onchange="applyFilters()"> Country</label>
+    <label class="fn-chk-item"><input type="checkbox" id="chk-general" checked onchange="applyFilters()"> General</label>
+    <div class="fn-toolbar-sep"></div>
+    <select class="fn-sort-select" id="sort-select" onchange="applyFilters()">
+      <option value="newest">Sort By: Newest</option>
+      <option value="oldest">Sort By: Oldest</option>
+      <option value="severity">Sort By: Severity</option>
+    </select>
+    <input type="date" class="fn-date-input" id="date-filter" onchange="applyFilters()"/>
+    <button class="fn-mark-read fn-ml-auto" onclick="markAllRead()">Mark all as read</button>
+  </div>
+
+  <!-- Section Header -->
+  <div class="fn-section-hdr">
+    <div class="fn-section-title">
+      Shipping Notifications
+      <span class="fn-count" id="fn-count">0</span>
+    </div>
+  </div>
+
+  <!-- List -->
+  <div id="fn-list"><div class="fn-loading">Loading notifications…</div></div>
+
+  <!-- Show older -->
+  <button class="fn-show-older" id="fn-show-older" style="display:none" onclick="showOlder()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+    Show older shipping notifications
+  </button>
+
+</div>
+
+<script>
+// ── Constants ──────────────────────────────────────────────────────────
+const LS_KEY = 'gn_read_ids';
+const RECENT_DAYS = 7;
+
+const TYPE_ICONS = {
+  Carrier:{ color:'#f59e0b', bg:'#fff7ed', d:'M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.657 1.343 3 3 3s3-1.343 3-3h6c0 1.657 1.343 3 3 3s3-1.343 3-3h2v-5l-3-4zM6 18.5c-.828 0-1.5-.672-1.5-1.5s.672-1.5 1.5-1.5 1.5.672 1.5 1.5-.672 1.5-1.5 1.5zm13.5-9l1.961 2.5H17V9.5h2.5zm-1 9c-.828 0-1.5-.672-1.5-1.5s.672-1.5 1.5-1.5 1.5.672 1.5 1.5-.672 1.5-1.5 1.5z' },
+  Country:{ color:'#8b5cf6', bg:'#f5f3ff', d:'M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1 17.93c-3.94-.49-7-3.858-7-7.93 0-.62.079-1.222.21-1.8L9 15v1a2 2 0 002 2v1.93zm6.9-2.54A2 2 0 0016 13h-1v-3a1 1 0 00-1-1H8v-2h2a1 1 0 000-2V3.07A8.003 8.003 0 0120 11c0 2.395-1.053 4.543-2.1 5.39z' },
+  General:{ color:'#10b981', bg:'#ecfdf5', d:'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+};
+const SEV_ICONS = {
+  Critical:{ color:'#dc2626', bg:'#fee2e2', cls:'sev-critical', d:'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+  Warning :{ color:'#a16207', bg:'#fef9c3', cls:'sev-warning',  d:'M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z' },
+  Info    :{ color:'#1d4ed8', bg:'#dbeafe', cls:'sev-info',     d:'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+};
+
+// ── State ──────────────────────────────────────────────────────────────
+let allNotifs = [];
+let visibleCount = 0;
+let showingOlder = false;
+const expanded = new Set();
+
+// ── Helpers ────────────────────────────────────────────────────────────
+function getReadIds(){ try{ return new Set(JSON.parse(localStorage.getItem(LS_KEY)||'[]')); }catch{ return new Set(); } }
+function saveReadIds(s){ localStorage.setItem(LS_KEY, JSON.stringify([...s])); }
+
+function timeAgo(iso){
+  if(!iso) return '';
+  const diff = (Date.now() - new Date(iso)) / 1000;
+  if(diff < 60) return 'just now';
+  if(diff < 3600){ const m=Math.floor(diff/60); return `${m} min${m!==1?'s':''} ago`; }
+  if(diff < 86400){ const h=Math.floor(diff/3600); return `${h} hr${h!==1?'s':''} ago`; }
+  const d=Math.floor(diff/86400); return `${d} day${d!==1?'s':''} ago`;
+}
+
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function svgIcon(d, size, color){
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+}
+
+function chevDown(){ return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>`; }
+function chevUp()  { return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>`; }
+
+// ── Render ─────────────────────────────────────────────────────────────
+function renderItem(n){
+  const ti  = TYPE_ICONS[n.type]  || TYPE_ICONS.General;
+  const si  = SEV_ICONS[n.severity] || SEV_ICONS.Info;
+  const rid = getReadIds();
+  const read = rid.has(n.id);
+  const prefix = (n.subType && n.subType !== n.type && n.subType !== 'General')
+    ? `<span style="color:${ti.color}">[${esc(n.subType)}]</span> `
+    : (n.type && n.type !== 'General' ? `<span style="color:${ti.color}">[${esc(n.type)}]</span> ` : '');
+
+  return `
+    <div class="fn-item" id="item-${n.id}" onclick="handleClick('${n.id}')">
+      <div class="fn-item-icon" style="background:${ti.bg}">${svgIcon(ti.d,22,ti.color)}</div>
+      <div class="fn-item-body">
+        <div class="fn-item-row1">
+          <div class="fn-item-title">${prefix}${esc(n.title)}</div>
+          <button class="fn-item-expand" id="exp-${n.id}" onclick="toggleExpand(event,'${n.id}')">${chevDown()}</button>
+        </div>
+        <div class="fn-item-msg clamp" id="msg-${n.id}">${esc(n.message||'')}</div>
+        <div class="fn-item-footer">
+          <span class="sev-pill ${si.cls}">${svgIcon(si.d,12,si.color)} ${n.severity||'Info'}</span>
+          <div class="fn-item-time">
+            ${timeAgo(n.createdAt)}
+            ${!read ? `<span class="fn-dot" id="dot-${n.id}"></span>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleExpand(e, id){
+  e.stopPropagation();
+  const msg = document.getElementById('msg-'+id);
+  const btn = document.getElementById('exp-'+id);
+  if(!msg||!btn) return;
+  if(expanded.has(id)){
+    expanded.delete(id);
+    msg.classList.add('clamp');
+    btn.innerHTML = chevDown();
+  } else {
+    expanded.add(id);
+    msg.classList.remove('clamp');
+    btn.innerHTML = chevUp();
+    handleClick(id);
+  }
+}
+
+function handleClick(id){
+  const rid = getReadIds();
+  if(rid.has(id)) return;
+  rid.add(id); saveReadIds(rid);
+  const dot = document.getElementById('dot-'+id);
+  if(dot) dot.remove();
+}
+
+function markAllRead(){
+  const rid = getReadIds();
+  allNotifs.forEach(n => rid.add(n.id));
+  saveReadIds(rid);
+  document.querySelectorAll('.fn-dot').forEach(d => d.remove());
+}
+
+// ── Filter & Sort ──────────────────────────────────────────────────────
+function applyFilters(){
+  const search  = (document.getElementById('search')?.value||'').toLowerCase();
+  const carrier = document.getElementById('chk-carrier')?.checked;
+  const country = document.getElementById('chk-country')?.checked;
+  const general = document.getElementById('chk-general')?.checked;
+  const sort    = document.getElementById('sort-select')?.value || 'newest';
+  const date    = document.getElementById('date-filter')?.value || '';
+
+  const typeMap = { Carrier: carrier, Country: country, General: general };
+
+  let filtered = allNotifs.filter(n => {
+    if(!typeMap[n.type]) return false;
+    if(search && !n.title.toLowerCase().includes(search) && !(n.message||'').toLowerCase().includes(search)) return false;
+    if(date){
+      const nd = new Date(n.createdAt);
+      const fd = new Date(date+'T00:00:00');
+      if(nd.toDateString()!==fd.toDateString()) return false;
+    }
+    return true;
+  });
+
+  const sevOrder = { Critical:0, Warning:1, Info:2 };
+  if(sort==='newest') filtered.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  else if(sort==='oldest') filtered.sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
+  else if(sort==='severity') filtered.sort((a,b)=>(sevOrder[a.severity]??3)-(sevOrder[b.severity]??3));
+
+  const cutoff = new Date(Date.now() - RECENT_DAYS*86400000);
+  const recent = filtered.filter(n => new Date(n.createdAt) >= cutoff);
+  const older  = filtered.filter(n => new Date(n.createdAt) <  cutoff);
+  const visible = showingOlder ? filtered : recent;
+
+  visibleCount = visible.length;
+  document.getElementById('fn-count').textContent = visible.length;
+
+  const list = document.getElementById('fn-list');
+  list.innerHTML = visible.length
+    ? visible.map(renderItem).join('')
+    : '<div class="fn-empty">No notifications found.</div>';
+
+  const showOlderBtn = document.getElementById('fn-show-older');
+  showOlderBtn.style.display = (!showingOlder && older.length > 0) ? 'flex' : 'none';
+}
+
+function showOlder(){
+  showingOlder = true;
+  applyFilters();
+}
+
+// ── Data Fetch ─────────────────────────────────────────────────────────
+async function loadData(){
+  try{
+    const cfg = await fetch('/api/config').then(r=>r.json());
+    if(!cfg?.supabaseUrl || !cfg?.supabaseKey){ showError(); return; }
+    const rows = await fetch(
+      `${cfg.supabaseUrl}/rest/v1/${cfg.supabaseTable||'notifications_data'}?id=eq.1&select=data`,
+      { headers:{ 'apikey': cfg.supabaseKey, 'Authorization': `Bearer ${cfg.supabaseKey}` } }
+    ).then(r=>r.json());
+    const all = Array.isArray(rows[0]?.data) ? rows[0].data : [];
+    allNotifs = all.filter(n => n.status === 'Active');
+    applyFilters();
+  } catch(e){
+    console.error(e);
+    showError();
+  }
+}
+
+function showError(){
+  document.getElementById('fn-list').innerHTML = '<div class="fn-empty">Could not load notifications.</div>';
+}
+
+loadData();
+setInterval(loadData, 120000);
+</script>
+</body>
+</html>

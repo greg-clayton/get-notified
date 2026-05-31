@@ -333,6 +333,8 @@ async function loadData(){
       const merged = new Set([...local, ...cloudRid]);
       saveReadIds(merged);
     }
+    // Always push local state back to cloud so dashboard picks up reads done here
+    syncToCloud(getReadIds());
 
     const rows = await fetch(
       `${cfg.supabaseUrl}/rest/v1/${cfg.supabaseTable||'notifications_data'}?id=eq.1&select=data`,

@@ -26,15 +26,19 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .fn-content{padding:24px 32px;max-width:960px;margin:0}
 
 /* ── Toolbar ── */
-.fn-toolbar{background:white;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
-.fn-type-label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.6px;white-space:nowrap}
-.fn-chk-item{display:flex;align-items:center;gap:5px;font-size:13px;color:#334155;cursor:pointer;user-select:none;white-space:nowrap}
-.fn-chk-item input{accent-color:#3b82f6;width:15px;height:15px;cursor:pointer}
+.fn-toolbar{background:white;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.fn-filter-group{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
 .fn-sort-select,.fn-date-input{border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;background:white;color:#0f172a;outline:none;font-family:inherit;cursor:pointer}
-.fn-toolbar-sep{width:1px;height:24px;background:#e2e8f0;flex-shrink:0}
-.fn-ml-auto{margin-left:auto}
 .fn-reset-btn{background:none;border:none;color:#3b82f6;font-size:13px;font-weight:600;padding:4px 8px;cursor:pointer;font-family:inherit;white-space:nowrap}
 .fn-reset-btn:hover{text-decoration:underline}
+/* ── Filter Dropdown (matches management screen) ── */
+.filter-dropdown-wrap{position:relative}
+.filter-dropdown-btn{background:white;border:1px solid #e2e8f0;border-radius:8px;padding:7px 12px;font-size:13px;color:#0f172a;display:flex;align-items:center;gap:8px;white-space:nowrap;min-width:110px;justify-content:space-between;cursor:pointer;font-family:inherit}
+.filter-dropdown-btn:hover{border-color:#cbd5e1;background:#f8fafc}
+.filter-dropdown-menu{position:absolute;top:calc(100% + 4px);left:0;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:6px 0;z-index:200;min-width:170px;box-shadow:0 8px 24px rgba(0,0,0,0.1)}
+.filter-dropdown-item{display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;font-size:13px;color:#0f172a;user-select:none}
+.filter-dropdown-item:hover{background:#f8fafc}
+.filter-checkbox{width:16px;height:16px;accent-color:#3b82f6;cursor:pointer;flex-shrink:0}
 
 /* ── Section ── */
 .fn-section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
@@ -122,26 +126,45 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 
   <!-- Toolbar -->
   <div class="fn-toolbar">
-    <span class="fn-type-label">TYPE</span>
-    <label class="fn-chk-item"><input type="checkbox" id="chk-all" checked onchange="toggleAll(this.checked)"> All</label>
-    <label class="fn-chk-item"><input type="checkbox" id="chk-carrier" checked onchange="updateAllCheckbox();applyFilters()"> Carrier</label>
-    <label class="fn-chk-item"><input type="checkbox" id="chk-country" checked onchange="updateAllCheckbox();applyFilters()"> Country</label>
-    <label class="fn-chk-item"><input type="checkbox" id="chk-general" checked onchange="updateAllCheckbox();applyFilters()"> General</label>
-    <div class="fn-toolbar-sep"></div>
-    <select class="fn-sort-select" id="sort-select" onchange="applyFilters()">
-      <option value="newest">Sort By: Newest</option>
-      <option value="oldest">Sort By: Oldest</option>
-      <option value="severity">Sort By: Severity</option>
-    </select>
-    <input type="date" class="fn-date-input" id="date-filter" onchange="applyFilters()"/>
-    <div class="fn-toolbar-sep"></div>
     <div class="fn-search-wrap">
       <div class="fn-search-icon">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       </div>
       <input class="fn-search" id="search" type="text" placeholder="Search here...." oninput="applyFilters()"/>
     </div>
-    <button class="fn-reset-btn" onclick="resetFilters()">RESET</button>
+    <div class="fn-filter-group">
+      <select class="fn-sort-select" id="sort-select" onchange="applyFilters()">
+        <option value="newest">Sort By: Newest</option>
+        <option value="oldest">Sort By: Oldest</option>
+        <option value="severity">Sort By: Severity</option>
+      </select>
+      <input type="date" class="fn-date-input" id="date-filter" onchange="applyFilters()"/>
+      <div class="filter-dropdown-wrap" id="type-dd-wrap">
+        <button class="filter-dropdown-btn" onclick="toggleTypeDropdown()">
+          <span id="type-dd-label">Type</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="filter-dropdown-menu" id="type-dd-menu" style="display:none">
+          <div class="filter-dropdown-item" onclick="toggleTypeAll()">
+            <input type="checkbox" class="filter-checkbox" id="dd-chk-all" checked/>
+            <span>Select All</span>
+          </div>
+          <div class="filter-dropdown-item" onclick="toggleTypeOption('Carrier')">
+            <input type="checkbox" class="filter-checkbox" id="dd-chk-carrier" checked/>
+            <span>Carrier</span>
+          </div>
+          <div class="filter-dropdown-item" onclick="toggleTypeOption('Country')">
+            <input type="checkbox" class="filter-checkbox" id="dd-chk-country" checked/>
+            <span>Country</span>
+          </div>
+          <div class="filter-dropdown-item" onclick="toggleTypeOption('General')">
+            <input type="checkbox" class="filter-checkbox" id="dd-chk-general" checked/>
+            <span>General</span>
+          </div>
+        </div>
+      </div>
+      <button class="fn-reset-btn" onclick="resetFilters()">RESET</button>
+    </div>
   </div>
 
   <!-- View Tabs -->
@@ -343,39 +366,51 @@ function markAllRead(){
   syncToCloud();
 }
 
-// ── Filter helpers ─────────────────────────────────────────────────────
-function toggleAll(checked){
-  document.getElementById('chk-carrier').checked = checked;
-  document.getElementById('chk-country').checked = checked;
-  document.getElementById('chk-general').checked = checked;
-  const all = document.getElementById('chk-all');
-  all.indeterminate = false;
-  applyFilters();
+// ── Type filter dropdown ───────────────────────────────────────────────
+let typeFilter = ['Carrier','Country','General'];
+
+function toggleTypeDropdown(){
+  const menu = document.getElementById('type-dd-menu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
 
-function updateAllCheckbox(){
-  const carrier = document.getElementById('chk-carrier').checked;
-  const country = document.getElementById('chk-country').checked;
-  const general = document.getElementById('chk-general').checked;
-  const all = document.getElementById('chk-all');
-  if(carrier && country && general){
-    all.checked = true; all.indeterminate = false;
-  } else if(!carrier && !country && !general){
-    all.checked = false; all.indeterminate = false;
-  } else {
-    all.checked = false; all.indeterminate = true;
-  }
+function toggleTypeAll(){
+  typeFilter = typeFilter.length === 3 ? [] : ['Carrier','Country','General'];
+  updateTypeDDUI(); applyFilters();
 }
+
+function toggleTypeOption(opt){
+  typeFilter = typeFilter.includes(opt) ? typeFilter.filter(x=>x!==opt) : [...typeFilter, opt];
+  updateTypeDDUI(); applyFilters();
+}
+
+function updateTypeDDUI(){
+  const all = typeFilter.length === 3;
+  const none = typeFilter.length === 0;
+  const chkAll = document.getElementById('dd-chk-all');
+  chkAll.checked = all; chkAll.indeterminate = !all && !none;
+  document.getElementById('dd-chk-carrier').checked = typeFilter.includes('Carrier');
+  document.getElementById('dd-chk-country').checked = typeFilter.includes('Country');
+  document.getElementById('dd-chk-general').checked = typeFilter.includes('General');
+  const lbl = document.getElementById('type-dd-label');
+  lbl.textContent = all ? 'Type' : none ? 'Type (none)' : `Type (${typeFilter.length})`;
+}
+
+// Close type dropdown on outside click
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('type-dd-wrap');
+  if(wrap && !wrap.contains(e.target)){
+    const menu = document.getElementById('type-dd-menu');
+    if(menu) menu.style.display = 'none';
+  }
+});
 
 function resetFilters(){
-  document.getElementById('chk-all').checked     = true;
-  document.getElementById('chk-all').indeterminate = false;
-  document.getElementById('chk-carrier').checked = true;
-  document.getElementById('chk-country').checked = true;
-  document.getElementById('chk-general').checked = true;
-  document.getElementById('sort-select').value   = 'newest';
-  document.getElementById('date-filter').value   = '';
-  document.getElementById('search').value        = '';
+  typeFilter = ['Carrier','Country','General'];
+  updateTypeDDUI();
+  document.getElementById('sort-select').value = 'newest';
+  document.getElementById('date-filter').value = '';
+  document.getElementById('search').value      = '';
   showingOlder = false;
   applyFilters();
 }
@@ -384,17 +419,12 @@ function resetFilters(){
 function applyFilters(resetPage = true){
   if(resetPage) currentPage = 1;
 
-  const search  = (document.getElementById('search')?.value||'').toLowerCase();
-  const carrier = document.getElementById('chk-carrier')?.checked;
-  const country = document.getElementById('chk-country')?.checked;
-  const general = document.getElementById('chk-general')?.checked;
-  const sort    = document.getElementById('sort-select')?.value || 'newest';
-  const date    = document.getElementById('date-filter')?.value || '';
-
-  const typeMap = { Carrier: carrier, Country: country, General: general };
+  const search = (document.getElementById('search')?.value||'').toLowerCase();
+  const sort   = document.getElementById('sort-select')?.value || 'newest';
+  const date   = document.getElementById('date-filter')?.value || '';
 
   let filtered = allNotifs.filter(n => {
-    if(!typeMap[n.type]) return false;
+    if(!typeFilter.includes(n.type)) return false;
     if(search && !n.title.toLowerCase().includes(search) && !(n.message||'').toLowerCase().includes(search)) return false;
     if(date){
       const nd = new Date(n.createdAt);

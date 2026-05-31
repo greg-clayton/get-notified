@@ -62,6 +62,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .fn-item-footer{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
 .fn-item-time{font-size:12px;color:#94a3b8;margin-left:auto;display:flex;align-items:center;gap:6px;white-space:nowrap}
 .fn-dot{width:8px;height:8px;border-radius:50%;background:#10b981;flex-shrink:0;box-shadow:0 0 6px rgba(16,185,129,0.5)}
+.fn-link-btn{display:inline-flex;align-items:center;color:#3b82f6;padding:2px 3px;border-radius:3px;text-decoration:none;flex-shrink:0;transition:color 0.15s,background 0.15s}
+.fn-link-btn:hover{color:#2563eb;background:#eff6ff}
 
 /* ── Severity Pills ── */
 .sev-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
@@ -312,6 +314,7 @@ function renderItem(n){
         <div class="fn-item-msg clamp" id="msg-${n.id}">${esc(n.message||'')}</div>
         <div class="fn-item-footer">
           <span class="sev-pill ${si.cls}">${svgIcon(si.d,12,si.color)} ${n.severity||'Info'}</span>
+          ${n.link?`<a class="fn-link-btn" href="${esc(n.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg></a>`:''}
           <div class="fn-item-time">
             ${timeAgo(n.createdAt)}
             ${!read ? `<span class="fn-dot" id="dot-${n.id}"></span>` : ''}

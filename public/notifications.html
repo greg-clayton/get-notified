@@ -154,6 +154,18 @@ function getReadIds(){ try{ return new Set(JSON.parse(localStorage.getItem(LS_KE
 function saveReadIds(s){ localStorage.setItem(LS_KEY, JSON.stringify([...s])); }
 function readKey(n){ return (n.id||'')+'|'+(n.createdAt||''); }
 
+// ── Cloud read-state sync (cross-origin with dashboard) ─────────────────
+async function getCloudReadIds(){
+  try{
+    const r = await fetch('/api/read-state');
+    const j = await r.json();
+    return new Set(j.readIds || []);
+  } catch { return new Set(); }
+}
+function syncToCloud(rid){
+  fetch('/api/read-state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({readIds:[...rid]})}).catch(()=>{});
+}
+
 function timeAgo(iso){
   if(!iso) return '';
   const diff = (Date.now() - new Date(iso)) / 1000;
@@ -237,6 +249,7 @@ function handleClick(el){
   rid.add(rkey); saveReadIds(rid);
   const dot = document.getElementById('dot-'+id);
   if(dot) dot.remove();
+  syncToCloud(rid);
 }
 
 function markAllRead(){
@@ -244,6 +257,7 @@ function markAllRead(){
   allNotifs.forEach(n => rid.add(readKey(n)));
   saveReadIds(rid);
   document.querySelectorAll('.fn-dot').forEach(d => d.remove());
+  syncToCloud(rid);
 }
 
 // ── Filter & Sort ──────────────────────────────────────────────────────
@@ -306,8 +320,20 @@ function showOlder(){
 // ── Data Fetch ─────────────────────────────────────────────────────────
 async function loadData(){
   try{
-    const cfg = await fetch('/api/config').then(r=>r.json());
+    // Fetch config + cloud read state in parallel
+    const [cfg, cloudRid] = await Promise.all([
+      fetch('/api/config').then(r=>r.json()),
+      getCloudReadIds()
+    ]);
     if(!cfg?.supabaseUrl || !cfg?.supabaseKey){ showError(); return; }
+
+    // Merge cloud read IDs into local (union — reads only accumulate)
+    if(cloudRid.size > 0){
+      const local = getReadIds();
+      const merged = new Set([...local, ...cloudRid]);
+      saveReadIds(merged);
+    }
+
     const rows = await fetch(
       `${cfg.supabaseUrl}/rest/v1/${cfg.supabaseTable||'notifications_data'}?id=eq.1&select=data`,
       { headers:{ 'apikey': cfg.supabaseKey, 'Authorization': `Bearer ${cfg.supabaseKey}` } }

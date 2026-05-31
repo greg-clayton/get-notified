@@ -70,6 +70,19 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 /* ── Empty ── */
 .fn-empty{text-align:center;padding:52px;color:#94a3b8;font-size:14px}
 .fn-loading{text-align:center;padding:40px;color:#94a3b8;font-size:14px}
+
+/* ── Pagination ── */
+.fn-pagination{display:flex;align-items:center;justify-content:flex-end;gap:16px;padding:16px 0 4px;flex-wrap:wrap}
+.fn-pg-left{display:flex;align-items:center;gap:8px}
+.fn-pg-right{display:flex;align-items:center;gap:6px}
+.fn-pg-label{font-size:13px;color:#64748b;white-space:nowrap}
+.fn-pg-select{border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:13px;background:white;color:#0f172a;outline:none;cursor:pointer;font-family:inherit}
+.fn-pg-select:focus{border-color:#93c5fd}
+.fn-pg-info{font-size:13px;color:#64748b;white-space:nowrap;margin-right:2px}
+.fn-pg-btn{background:white;border:1px solid #e2e8f0;border-radius:6px;padding:5px 10px;font-size:14px;color:#334155;cursor:pointer;line-height:1;font-family:inherit;transition:background 0.1s}
+.fn-pg-btn:hover:not(:disabled){background:#f1f5f9;border-color:#cbd5e1}
+.fn-pg-btn:disabled{color:#cbd5e1;cursor:default;border-color:#f1f5f9;background:white}
+.fn-pg-current{font-size:13px;font-weight:600;color:#0f172a;padding:5px 10px;border:1px solid #3b82f6;border-radius:6px;background:#eff6ff;min-width:32px;text-align:center;line-height:1}
 </style>
 </head>
 <body>
@@ -125,6 +138,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
     Show older shipping notifications
   </button>
 
+  <!-- Pagination -->
+  <div class="fn-pagination" id="fn-pagination"></div>
+
 </div>
 
 <script>
@@ -148,6 +164,8 @@ let allNotifs = [];
 let visibleCount = 0;
 let showingOlder = false;
 const expanded = new Set();
+let currentPage  = 1;
+let rowsPerPage  = 10;
 
 // ── Helpers ────────────────────────────────────────────────────────────
 function getReadIds(){ try{ return new Set(JSON.parse(localStorage.getItem(LS_KEY)||'[]')); }catch{ return new Set(); } }
@@ -261,7 +279,9 @@ function markAllRead(){
 }
 
 // ── Filter & Sort ──────────────────────────────────────────────────────
-function applyFilters(){
+function applyFilters(resetPage = true){
+  if(resetPage) currentPage = 1;
+
   const search  = (document.getElementById('search')?.value||'').toLowerCase();
   const carrier = document.getElementById('chk-carrier')?.checked;
   const country = document.getElementById('chk-country')?.checked;
@@ -298,23 +318,74 @@ function applyFilters(){
   }
 
   const visible = showingOlder ? filtered : recent;
+  visibleCount  = visible.length;
 
-  visibleCount = visible.length;
   document.getElementById('fn-count').textContent = visible.length;
 
+  // Paginate
+  const totalPages = Math.max(1, Math.ceil(visible.length / rowsPerPage));
+  currentPage = Math.min(currentPage, totalPages);
+  const start    = (currentPage - 1) * rowsPerPage;
+  const pageItems = visible.slice(start, start + rowsPerPage);
+
   const list = document.getElementById('fn-list');
-  list.innerHTML = visible.length
-    ? visible.map(renderItem).join('')
+  list.innerHTML = pageItems.length
+    ? pageItems.map(renderItem).join('')
     : '<div class="fn-empty">No notifications found.</div>';
-  if(visible.length) requestAnimationFrame(applyChevronVisibility);
+  if(pageItems.length) requestAnimationFrame(applyChevronVisibility);
 
   const showOlderBtn = document.getElementById('fn-show-older');
   showOlderBtn.style.display = (!showingOlder && older.length > 0) ? 'flex' : 'none';
+
+  renderPagination(visible.length, currentPage, rowsPerPage);
 }
 
 function showOlder(){
   showingOlder = true;
-  applyFilters();
+  currentPage = 1;
+  applyFilters(false);
+}
+
+// ── Pagination ─────────────────────────────────────────────────────────
+function renderPagination(total, page, perPage){
+  const bar = document.getElementById('fn-pagination');
+  if(!bar) return;
+  if(total === 0){ bar.innerHTML = ''; return; }
+
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const start = (page - 1) * perPage + 1;
+  const end   = Math.min(page * perPage, total);
+  const isFirst = page === 1;
+  const isLast  = page === totalPages;
+
+  bar.innerHTML = `
+    <div class="fn-pg-left">
+      <span class="fn-pg-label">Rows per page:</span>
+      <select class="fn-pg-select" onchange="changeRowsPerPage(this.value)">
+        ${[5,10,25,50].map(n=>`<option value="${n}"${n===perPage?' selected':''}>${n}</option>`).join('')}
+      </select>
+    </div>
+    <div class="fn-pg-right">
+      <span class="fn-pg-info">${start}–${end} of ${total}</span>
+      <button class="fn-pg-btn" onclick="goToPage(1)"           ${isFirst?'disabled':''} title="First page">«</button>
+      <button class="fn-pg-btn" onclick="goToPage(${page-1})"   ${isFirst?'disabled':''} title="Previous page">‹</button>
+      <span class="fn-pg-current">${page}</span>
+      <button class="fn-pg-btn" onclick="goToPage(${page+1})"   ${isLast?'disabled':''} title="Next page">›</button>
+      <button class="fn-pg-btn" onclick="goToPage(${totalPages})" ${isLast?'disabled':''} title="Last page">»</button>
+    </div>`;
+}
+
+function goToPage(n){
+  const totalPages = Math.max(1, Math.ceil(visibleCount / rowsPerPage));
+  currentPage = Math.max(1, Math.min(n, totalPages));
+  applyFilters(false);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function changeRowsPerPage(val){
+  rowsPerPage = parseInt(val, 10);
+  currentPage = 1;
+  applyFilters(false);
 }
 
 // ── Data Fetch ─────────────────────────────────────────────────────────

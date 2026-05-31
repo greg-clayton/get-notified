@@ -88,6 +88,12 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .fn-pin-btn{background:none;border:none;color:#94a3b8;cursor:pointer;padding:3px 4px;flex-shrink:0;display:flex;align-items:center;border-radius:5px;transition:color 0.15s,background 0.15s}
 .fn-pin-btn:hover{color:#f59e0b;background:#fef3c7}
 .fn-pin-btn.pinned{color:#f59e0b}
+
+/* ── View Tabs (All / Pinned) ── */
+.fn-view-tabs{display:flex;border-bottom:2px solid #e2e8f0;margin-bottom:16px}
+.fn-view-tab{background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:9px 18px;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:color 0.15s,border-color 0.15s}
+.fn-view-tab.active{color:#3b82f6;border-bottom-color:#3b82f6}
+.fn-view-tab:hover:not(.active){color:#334155}
 </style>
 </head>
 <body>
@@ -134,6 +140,12 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
     <button class="fn-mark-read" onclick="markAllRead()">Mark all as read</button>
   </div>
 
+  <!-- View Tabs -->
+  <div class="fn-view-tabs">
+    <button class="fn-view-tab active" id="vtab-all"    onclick="switchViewTab('all')">All</button>
+    <button class="fn-view-tab"        id="vtab-pinned" onclick="switchViewTab('pinned')">Pinned</button>
+  </div>
+
   <!-- List -->
   <div id="fn-list"><div class="fn-loading">Loading notifications…</div></div>
 
@@ -169,6 +181,7 @@ const SEV_ICONS = {
 let allNotifs = [];
 let visibleCount = 0;
 let showingOlder = false;
+let viewTab      = 'all';
 const expanded = new Set();
 let currentPage  = 1;
 let rowsPerPage  = 10;
@@ -219,17 +232,30 @@ function pinIcon(pinned){
   return `<svg width="14" height="14" viewBox="0 0 24 24" fill="${fill}" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h.5a2 2 0 0 0 0-4h-7a2 2 0 0 0 0 4H9v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/><line x1="12" y1="17" x2="12" y2="22"/></svg>`;
 }
 
+function switchViewTab(tab){
+  viewTab = tab;
+  document.getElementById('vtab-all').className    = 'fn-view-tab' + (tab === 'all'    ? ' active' : '');
+  document.getElementById('vtab-pinned').className = 'fn-view-tab' + (tab === 'pinned' ? ' active' : '');
+  currentPage = 1;
+  applyFilters(false);
+}
+
 function togglePin(id, event){
   event.stopPropagation();
   const pids = getPinnedIds();
   if(pids.has(id)) pids.delete(id); else pids.add(id);
   savePinnedIds(pids);
   const p = pids.has(id);
-  const btn = document.getElementById('pin-'+id);
-  if(btn){
-    btn.className = 'fn-pin-btn' + (p ? ' pinned' : '');
-    btn.title = p ? 'Unpin' : 'Pin to favourites';
-    btn.innerHTML = pinIcon(p);
+  if(viewTab === 'pinned'){
+    // Item may need to leave the list (unpinned while on Pinned tab)
+    applyFilters(false);
+  } else {
+    const btn = document.getElementById('pin-'+id);
+    if(btn){
+      btn.className = 'fn-pin-btn' + (p ? ' pinned' : '');
+      btn.title = p ? 'Unpin' : 'Pin to favourites';
+      btn.innerHTML = pinIcon(p);
+    }
   }
   syncToCloud();
 }
@@ -342,19 +368,28 @@ function applyFilters(resetPage = true){
   else if(sort==='oldest') filtered.sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
   else if(sort==='severity') filtered.sort((a,b)=>(sevOrder[a.severity]??3)-(sevOrder[b.severity]??3));
 
-  const cutoff = new Date(Date.now() - RECENT_DAYS*86400000);
-  const recent = filtered.filter(n => new Date(n.createdAt) >= cutoff);
-  const older  = filtered.filter(n => new Date(n.createdAt) <  cutoff);
+  let visible;
+  if(viewTab === 'pinned'){
+    const pids = getPinnedIds();
+    visible = filtered.filter(n => pids.has(n.id));
+    document.getElementById('fn-show-older').style.display = 'none';
+  } else {
+    const cutoff = new Date(Date.now() - RECENT_DAYS*86400000);
+    const recent = filtered.filter(n => new Date(n.createdAt) >= cutoff);
+    const older  = filtered.filter(n => new Date(n.createdAt) <  cutoff);
 
-  // Auto-expand older section if any unread notifications are hidden there
-  if(!showingOlder && older.length > 0){
-    const rid = getReadIds();
-    if(older.some(n => !rid.has(readKey(n)))) showingOlder = true;
+    // Auto-expand older section if any unread notifications are hidden there
+    if(!showingOlder && older.length > 0){
+      const rid = getReadIds();
+      if(older.some(n => !rid.has(readKey(n)))) showingOlder = true;
+    }
+
+    visible = showingOlder ? filtered : recent;
+    const showOlderBtn = document.getElementById('fn-show-older');
+    showOlderBtn.style.display = (!showingOlder && older.length > 0) ? 'flex' : 'none';
   }
 
-  const visible = showingOlder ? filtered : recent;
-  visibleCount  = visible.length;
-
+  visibleCount = visible.length;
   document.getElementById('fn-count').textContent = visible.length;
 
   // Paginate
@@ -366,11 +401,8 @@ function applyFilters(resetPage = true){
   const list = document.getElementById('fn-list');
   list.innerHTML = pageItems.length
     ? pageItems.map(renderItem).join('')
-    : '<div class="fn-empty">No notifications found.</div>';
+    : `<div class="fn-empty">${viewTab === 'pinned' ? 'No pinned notifications.' : 'No notifications found.'}</div>`;
   if(pageItems.length) requestAnimationFrame(applyChevronVisibility);
-
-  const showOlderBtn = document.getElementById('fn-show-older');
-  showOlderBtn.style.display = (!showingOlder && older.length > 0) ? 'flex' : 'none';
 
   renderPagination(visible.length, currentPage, rowsPerPage);
 }
@@ -485,14 +517,19 @@ async function syncOnlyPoll(){
     const same = cloudPids.size === localPids.size && [...cloudPids].every(id => localPids.has(id));
     if(!same){
       savePinnedIds(cloudPids);
-      allNotifs.forEach(n => {
-        const btn = document.getElementById('pin-'+n.id);
-        if(!btn) return;
-        const p = cloudPids.has(n.id);
-        btn.className = 'fn-pin-btn' + (p ? ' pinned' : '');
-        btn.title = p ? 'Unpin' : 'Pin to favourites';
-        btn.innerHTML = pinIcon(p);
-      });
+      if(viewTab === 'pinned'){
+        // Re-render so items appear/disappear correctly
+        applyFilters(false);
+      } else {
+        allNotifs.forEach(n => {
+          const btn = document.getElementById('pin-'+n.id);
+          if(!btn) return;
+          const p = cloudPids.has(n.id);
+          btn.className = 'fn-pin-btn' + (p ? ' pinned' : '');
+          btn.title = p ? 'Unpin' : 'Pin to favourites';
+          btn.innerHTML = pinIcon(p);
+        });
+      }
     }
   } catch{}
 }

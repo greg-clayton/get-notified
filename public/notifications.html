@@ -325,10 +325,16 @@ function renderItem(n){
 }
 
 function applyChevronVisibility(){
-  document.querySelectorAll('.fn-item-msg').forEach(msg => {
+  document.querySelectorAll('.fn-item-msg.clamp').forEach(msg => {
     const btn = msg.closest('.fn-item-body')?.querySelector('.fn-item-expand');
     if(!btn) return;
-    btn.style.display = msg.scrollHeight > msg.offsetHeight + 2 ? '' : 'none';
+    // Remove clamp to read true full height, then restore — reading scrollHeight
+    // forces a synchronous layout recalculation each time
+    msg.classList.remove('clamp');
+    const fullH = msg.scrollHeight;
+    msg.classList.add('clamp');
+    const clampH = msg.offsetHeight; // forces layout after re-applying clamp
+    btn.style.display = fullH > clampH + 4 ? '' : 'none';
   });
 }
 
@@ -476,7 +482,7 @@ function applyFilters(resetPage = true){
   list.innerHTML = pageItems.length
     ? pageItems.map(renderItem).join('')
     : `<div class="fn-empty">${viewTab === 'pinned' ? 'No pinned notifications.' : 'No notifications found.'}</div>`;
-  if(pageItems.length) requestAnimationFrame(applyChevronVisibility);
+  if(pageItems.length) setTimeout(applyChevronVisibility, 0);
 
   renderPagination(visible.length, currentPage, rowsPerPage);
 }

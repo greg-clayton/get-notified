@@ -98,7 +98,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .fn-pin-btn.pinned{color:#f59e0b}
 
 /* ── View Tabs (All / Pinned) ── */
-.fn-view-tabs{display:flex;border-bottom:2px solid #e2e8f0;margin-bottom:16px}
+.fn-view-tabs{display:flex;align-items:center;border-bottom:2px solid #e2e8f0;margin-bottom:16px}
 .fn-view-tab{background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:9px 18px;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:color 0.15s,border-color 0.15s}
 .fn-view-tab.active{color:#3b82f6;border-bottom-color:#3b82f6}
 .fn-view-tab:hover:not(.active){color:#334155}
@@ -123,7 +123,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
       Shipping Notifications
       <span class="fn-count" id="fn-count">0</span>
     </div>
-    <button class="fn-mark-read" onclick="markAllRead()">Mark all as read</button>
   </div>
 
   <!-- Toolbar -->
@@ -173,6 +172,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
   <div class="fn-view-tabs">
     <button class="fn-view-tab active" id="vtab-all"    onclick="switchViewTab('all')">All</button>
     <button class="fn-view-tab"        id="vtab-pinned" onclick="switchViewTab('pinned')">Pinned</button>
+    <button class="fn-mark-read" style="margin-left:auto;padding-bottom:9px" onclick="markAllRead()">Mark all as read</button>
   </div>
 
   <!-- List -->

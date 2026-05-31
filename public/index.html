@@ -966,7 +966,7 @@ function NotificationForm({ notification, onSave, onBack }) {
   const handleSubmit = asDraft => {
     if (!asDraft && !validate()) return;
     const saved = {
-      id:           notification?.id || genId(),
+      id:           isEdit ? genId() : (notification?.id || genId()),
       title:        f.title,
       type:         f.type || 'General',
       subType:      f.type === 'General' ? 'General' : f.subType,

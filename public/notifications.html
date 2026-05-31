@@ -276,6 +276,13 @@ function applyFilters(){
   const cutoff = new Date(Date.now() - RECENT_DAYS*86400000);
   const recent = filtered.filter(n => new Date(n.createdAt) >= cutoff);
   const older  = filtered.filter(n => new Date(n.createdAt) <  cutoff);
+
+  // Auto-expand older section if any unread notifications are hidden there
+  if(!showingOlder && older.length > 0){
+    const rid = getReadIds();
+    if(older.some(n => !rid.has(readKey(n)))) showingOlder = true;
+  }
+
   const visible = showingOlder ? filtered : recent;
 
   visibleCount = visible.length;

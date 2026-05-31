@@ -50,8 +50,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .fn-item-title{font-size:14px;font-weight:700;color:#0f172a;flex:1;line-height:1.35}
 .fn-item-expand{background:none;border:none;color:#94a3b8;cursor:pointer;padding:3px;flex-shrink:0;display:flex;align-items:center}
 .fn-item-expand:hover{color:#64748b}
-.fn-item-msg{font-size:13px;color:#475569;margin-top:6px;line-height:1.6}
-.fn-item-msg.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fn-item-msg{font-size:13px;color:#475569;margin-top:6px;line-height:1.6;overflow-wrap:break-word;word-break:break-word;overflow:hidden}
+.fn-item-msg.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis}
+.fn-item-expand svg,.fn-item-expand path{pointer-events:none}
 .fn-item-footer{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
 .fn-item-time{font-size:12px;color:#94a3b8;margin-left:auto;display:flex;align-items:center;gap:6px;white-space:nowrap}
 .fn-dot{width:8px;height:8px;border-radius:50%;background:#10b981;flex-shrink:0;box-shadow:0 0 6px rgba(16,185,129,0.5)}
@@ -155,6 +156,7 @@ const expanded = new Set();
 // ── Helpers ────────────────────────────────────────────────────────────
 function getReadIds(){ try{ return new Set(JSON.parse(localStorage.getItem(LS_KEY)||'[]')); }catch{ return new Set(); } }
 function saveReadIds(s){ localStorage.setItem(LS_KEY, JSON.stringify([...s])); }
+function readKey(n){ return (n.id||'')+'|'+(n.createdAt||''); }
 
 function timeAgo(iso){
   if(!iso) return '';
@@ -176,21 +178,22 @@ function chevUp()  { return `<svg width="16" height="16" viewBox="0 0 24 24" fil
 
 // ── Render ─────────────────────────────────────────────────────────────
 function renderItem(n){
-  const ti  = TYPE_ICONS[n.type]  || TYPE_ICONS.General;
-  const si  = SEV_ICONS[n.severity] || SEV_ICONS.Info;
-  const rid = getReadIds();
-  const read = rid.has(n.id);
+  const ti   = TYPE_ICONS[n.type]  || TYPE_ICONS.General;
+  const si   = SEV_ICONS[n.severity] || SEV_ICONS.Info;
+  const rid  = getReadIds();
+  const rkey = readKey(n);
+  const read = rid.has(rkey);
   const prefix = (n.subType && n.subType !== n.type && n.subType !== 'General')
     ? `<span style="color:${ti.color}">[${esc(n.subType)}]</span> `
     : (n.type && n.type !== 'General' ? `<span style="color:${ti.color}">[${esc(n.type)}]</span> ` : '');
 
   return `
-    <div class="fn-item" id="item-${n.id}" onclick="handleClick('${n.id}')">
+    <div class="fn-item" id="item-${n.id}" data-id="${n.id}" data-rkey="${esc(rkey)}" onclick="handleClick(this)">
       <div class="fn-item-icon" style="background:${ti.bg}">${svgIcon(ti.d,22,ti.color)}</div>
       <div class="fn-item-body">
         <div class="fn-item-row1">
           <div class="fn-item-title">${prefix}${esc(n.title)}</div>
-          <button class="fn-item-expand" id="exp-${n.id}" onclick="toggleExpand(event,'${n.id}')">${chevDown()}</button>
+          <button class="fn-item-expand" id="exp-${n.id}" onclick="toggleExpand(event,'${n.id}')" style="display:none">${chevDown()}</button>
         </div>
         <div class="fn-item-msg clamp" id="msg-${n.id}">${esc(n.message||'')}</div>
         <div class="fn-item-footer">
@@ -204,10 +207,19 @@ function renderItem(n){
     </div>`;
 }
 
+function applyChevronVisibility(){
+  document.querySelectorAll('.fn-item-msg').forEach(msg => {
+    const btn = msg.closest('.fn-item-body')?.querySelector('.fn-item-expand');
+    if(!btn) return;
+    btn.style.display = msg.scrollHeight > msg.offsetHeight + 2 ? '' : 'none';
+  });
+}
+
 function toggleExpand(e, id){
   e.stopPropagation();
-  const msg = document.getElementById('msg-'+id);
-  const btn = document.getElementById('exp-'+id);
+  const btn  = e.target.closest('.fn-item-expand') || document.getElementById('exp-'+id);
+  const item = btn && btn.closest('.fn-item');
+  const msg  = item && item.querySelector('.fn-item-msg');
   if(!msg||!btn) return;
   if(expanded.has(id)){
     expanded.delete(id);
@@ -217,21 +229,23 @@ function toggleExpand(e, id){
     expanded.add(id);
     msg.classList.remove('clamp');
     btn.innerHTML = chevUp();
-    handleClick(id);
+    handleClick(item);
   }
 }
 
-function handleClick(id){
-  const rid = getReadIds();
-  if(rid.has(id)) return;
-  rid.add(id); saveReadIds(rid);
+function handleClick(el){
+  const id   = el.dataset.id;
+  const rkey = el.dataset.rkey;
+  const rid  = getReadIds();
+  if(rid.has(rkey)) return;
+  rid.add(rkey); saveReadIds(rid);
   const dot = document.getElementById('dot-'+id);
   if(dot) dot.remove();
 }
 
 function markAllRead(){
   const rid = getReadIds();
-  allNotifs.forEach(n => rid.add(n.id));
+  allNotifs.forEach(n => rid.add(readKey(n)));
   saveReadIds(rid);
   document.querySelectorAll('.fn-dot').forEach(d => d.remove());
 }
@@ -275,6 +289,7 @@ function applyFilters(){
   list.innerHTML = visible.length
     ? visible.map(renderItem).join('')
     : '<div class="fn-empty">No notifications found.</div>';
+  if(visible.length) requestAnimationFrame(applyChevronVisibility);
 
   const showOlderBtn = document.getElementById('fn-show-older');
   showOlderBtn.style.display = (!showingOlder && older.length > 0) ? 'flex' : 'none';

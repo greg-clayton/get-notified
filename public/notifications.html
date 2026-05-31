@@ -15,15 +15,16 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .fn-header-left h1{font-size:22px;font-weight:700;color:#0f172a}
 .fn-header-left p{font-size:13px;color:#64748b;margin-top:3px}
 .fn-header-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.fn-search-wrap{position:relative}
+.fn-search-wrap{position:relative;flex:1;min-width:140px;max-width:260px}
 .fn-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none}
-.fn-search{padding:8px 12px 8px 34px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;width:220px;outline:none;font-family:inherit}
+.fn-search{padding:8px 12px 8px 34px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;width:100%;outline:none;font-family:inherit}
 .fn-search:focus{border-color:#93c5fd}
 .fn-open-out{background:none;border:1px solid #e2e8f0;border-radius:8px;padding:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b}
 .fn-open-out:hover{background:#f8fafc;color:#0f172a}
 
 /* ── Content ── */
 .fn-content{padding:24px 32px;max-width:960px;margin:0}
+body{overflow-x:hidden}
 
 /* ── Toolbar ── */
 .fn-toolbar{background:white;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
@@ -35,7 +36,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .filter-dropdown-wrap{position:relative}
 .filter-dropdown-btn{background:white;border:1px solid #e2e8f0;border-radius:8px;padding:7px 12px;font-size:13px;color:#0f172a;display:flex;align-items:center;gap:8px;white-space:nowrap;min-width:110px;justify-content:space-between;cursor:pointer;font-family:inherit}
 .filter-dropdown-btn:hover{border-color:#cbd5e1;background:#f8fafc}
-.filter-dropdown-menu{position:absolute;top:calc(100% + 4px);left:0;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:6px 0;z-index:200;min-width:170px;box-shadow:0 8px 24px rgba(0,0,0,0.1)}
+.filter-dropdown-menu{position:absolute;top:calc(100% + 4px);right:0;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:6px 0;z-index:200;min-width:170px;box-shadow:0 8px 24px rgba(0,0,0,0.1)}
 .filter-dropdown-item{display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;font-size:13px;color:#0f172a;user-select:none}
 .filter-dropdown-item:hover{background:#f8fafc}
 .filter-checkbox{width:16px;height:16px;accent-color:#3b82f6;cursor:pointer;flex-shrink:0}

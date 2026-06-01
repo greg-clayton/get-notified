@@ -937,7 +937,8 @@ function NotificationForm({ notification, onSave, onBack }) {
   const errCount = Object.values(errors).filter(Boolean).length;
 
   const isMandatoryFilled = f.title.trim() && f.type && f.severity && f.message.trim() && f.createdBy.trim() &&
-    (f.type === 'General' || f.subType.trim());
+    (f.type === 'General' || f.subType.trim()) &&
+    (!f.scheduledFor || f.publishDate);
 
   const validate = () => {
     const e = {};
@@ -952,8 +953,7 @@ function NotificationForm({ notification, onSave, onBack }) {
     if (!f.createdBy.trim())                             e.createdBy = 'Your name is required';
     if (f.link && !/^https?:\/\/.+\..+/.test(f.link))   e.link      = 'Please enter a valid URL (must start with https://)';
     if (f.scheduledFor) {
-      if (f.publishDate && !f.publishTime)  e.publishTime = 'Time is required when date is set';
-      if (f.publishTime && !f.publishDate)  e.publishDate = 'Date is required when time is set';
+      if (!f.publishDate)                         e.publishDate = 'Publish date is required when scheduling';
       if (f.publishDate && f.publishDate < today) e.publishDate = 'Publish date cannot be in the past';
     }
     if (f.expiryDate && !f.expiryTime) e.expiryTime = 'Time is required when date is set';
@@ -965,7 +965,7 @@ function NotificationForm({ notification, onSave, onBack }) {
 
   const determineStatus = asDraft => {
     if (asDraft) return 'Draft';
-    if (f.scheduledFor && f.publishDate && f.publishTime) return 'Scheduled';
+    if (f.scheduledFor && f.publishDate) return 'Scheduled';
     return 'Active';
   };
 
@@ -1154,7 +1154,7 @@ function NotificationForm({ notification, onSave, onBack }) {
                   <div className="form-field-title">Publish Date and Time</div>
                   <div className="dt-row">
                     <div>
-                      <label className="form-label" style={{fontWeight:400,color:'#64748b',fontSize:12}}>Select Date</label>
+                      <label className="form-label" style={{fontWeight:400,color:'#64748b',fontSize:12}}>Select Date <span className="required">*</span></label>
                       <input type="date" className={`form-input${errors.publishDate?' err':''}`} min={today} value={f.publishDate} onChange={e=>set('publishDate',e.target.value)} />
                       {errors.publishDate && <div className="form-error">{errors.publishDate}</div>}
                     </div>

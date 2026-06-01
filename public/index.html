@@ -938,7 +938,7 @@ function NotificationForm({ notification, onSave, onBack }) {
 
   const isMandatoryFilled = f.title.trim() && f.type && f.severity && f.message.trim() && f.createdBy.trim() &&
     (f.type === 'General' || f.subType.trim()) &&
-    (!f.scheduledFor || f.publishDate);
+    (!f.scheduledFor || (f.publishDate && (f.publishDate > today || (f.publishDate === today && f.publishTime))));
 
   const validate = () => {
     const e = {};
@@ -953,8 +953,21 @@ function NotificationForm({ notification, onSave, onBack }) {
     if (!f.createdBy.trim())                             e.createdBy = 'Your name is required';
     if (f.link && !/^https?:\/\/.+\..+/.test(f.link))   e.link      = 'Please enter a valid URL (must start with https://)';
     if (f.scheduledFor) {
-      if (!f.publishDate)                         e.publishDate = 'Publish date is required when scheduling';
-      if (f.publishDate && f.publishDate < today) e.publishDate = 'Publish date cannot be in the past';
+      if (!f.publishDate) {
+        e.publishDate = 'Publish date is required when scheduling';
+      } else if (f.publishDate < today) {
+        e.publishDate = 'Publish date cannot be in the past';
+      } else if (f.publishDate === today) {
+        if (!f.publishTime) {
+          e.publishDate = 'A time is required when scheduling for today';
+        } else {
+          const now = new Date();
+          const [h, m] = f.publishTime.split(':').map(Number);
+          const scheduled = new Date(); scheduled.setHours(h, m, 0, 0);
+          if (scheduled <= now) e.publishTime = 'Scheduled time must be later than the current time';
+        }
+      }
+      // publishDate > today: valid, time is optional
     }
     if (f.expiryDate && !f.expiryTime) e.expiryTime = 'Time is required when date is set';
     if (f.expiryTime && !f.expiryDate) e.expiryDate = 'Date is required when time is set';
